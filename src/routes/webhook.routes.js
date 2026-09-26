@@ -1,45 +1,40 @@
 // src/routes/webhook.routes.js
 const express = require('express');
 const router = express.Router();
-const { activeSessions } = require('../store/memoryStore');
+const sessionStore = require('../store/sessionStore');
 
-/**
- * POST /api/v1/webhooks/sms/inbound
- * Gateway hit by upstream telecom whenever an incoming SMS arrives.
- */
-router.post('/sms/inbound', (req, res) => {
-  // Twilio sends urlencoded body parameters: To, From, Body
+// Inbound SMS webhook
+router.post('/sms/inbound', async (req, res) => {
   const { To, From, Body } = req.body;
 
-  console.log(`[INBOUND SMS] To: ${To} | From: ${From} | Body: "${Body}"`);
+  console.log(`\n[INBOUND SMS] To: ${To} (len=${To.length}, codes=${[...To].map(c => c.charCodeAt(0)).join(',')}) | From: ${From} | Body: "${Body}"\n`);
 
-  // 1. Match SMS to Active Session
-  const session = activeSessions.get(To);
+  try {
+    const session = await sessionStore.getSessionByPhone(To);
 
-  if (!session || session.status !== 'ACTIVE') {
-    // Send 200 OK so provider doesn't endlessly retry sending this payload
+    if (!session || session.status !== 'ACTIVE') {
+      res.type('text/xml');
+      return res.status(200).send('<Response></Response>');
+    }
+
+    const codeMatch = Body ? Body.match(/\b\d{4,8}\b/) : null;
+    const parsedCode = codeMatch ? codeMatch[0] : null;
+
+    // Save OTP and set status = COMPLETED within a DB transaction
+    await sessionStore.saveOtpAndCompleteSession(To, {
+      sender: From,
+      rawText: Body,
+      code: parsedCode
+    });
+
+    res.type('text/xml');
+    return res.status(200).send('<Response></Response>');
+  } catch (error) {
+    console.error('[WEBHOOK PROCESSING ERROR]:', error.message);
+    // Respond with 200 to prevent provider from retrying infinitely on DB failure
+    res.type('text/xml');
     return res.status(200).send('<Response></Response>');
   }
-
-  // 2. RegEx OTP Extraction Engine
-  // Looks for standalone 4 to 8 digit numbers in the text body
-  const codeMatch = Body.match(/\b\d{4,8}\b/);
-  const parsedCode = codeMatch ? codeMatch[0] : null;
-
-  // 3. Update Session State
-  session.status = 'COMPLETED';
-  session.otp = {
-    sender: From,
-    rawText: Body,
-    code: parsedCode,
-    receivedAt: new Date().toISOString()
-  };
-
-  activeSessions.set(To, session);
-
-  // 4. Return TwiML response to satisfy Twilio HTTP client specs
-  res.type('text/xml');
-  return res.status(200).send('<Response></Response>');
 });
 
 module.exports = router;

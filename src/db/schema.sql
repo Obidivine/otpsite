@@ -1,0 +1,49 @@
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. USERS TABLE
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (balance >= 0),
+    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. SESSIONS TABLE
+CREATE TABLE IF NOT EXISTS sessions (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id UUID,
+    service VARCHAR(64) NOT NULL,
+    subaccount_sid VARCHAR(255) NOT NULL,
+    subaccount_token VARCHAR(255) NOT NULL,
+    number_sid VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(32) NOT NULL UNIQUE,
+    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for O(1) webhook lookups
+CREATE INDEX IF NOT EXISTS idx_sessions_phone_number ON sessions(phone_number);
+
+-- 3. OTPS TABLE
+CREATE TABLE IF NOT EXISTS otps (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id VARCHAR(64) REFERENCES sessions(id) ON DELETE CASCADE,
+    sender VARCHAR(64) NOT NULL,
+    raw_text TEXT NOT NULL,
+    code VARCHAR(16),
+    received_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. TRANSACTIONS TABLE
+CREATE TABLE IF NOT EXISTS transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID,
+    amount NUMERIC(12, 2) NOT NULL,
+    type VARCHAR(32) NOT NULL, -- 'DEPOSIT', 'HOLD', 'REFUND', 'PAYMENT'
+    reference VARCHAR(255) UNIQUE NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
