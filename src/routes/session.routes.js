@@ -3,13 +3,15 @@ const express = require('express');
 const router = express.Router();
 const telecomService = require('../services/telecom.service');
 const sessionStore = require('../store/sessionStore');
+const authenticateToken = require('../middleware/auth.middleware');
 
-// Rent number
-router.post('/rent', async (req, res, next) => {
-  const { userId, country = 'US', service } = req.body;
+// POST /api/v1/sessions/rent (PROTECTED)
+router.post('/rent', authenticateToken, async (req, res) => {
+  const { country = 'US', service } = req.body;
+  const userId = req.user.id;
 
-  if (!userId || !service) {
-    return res.status(400).json({ error: 'userId and service are required.' });
+  if (!service) {
+    return res.status(400).json({ error: 'service is required.' });
   }
 
   try {
@@ -32,7 +34,6 @@ router.post('/rent', async (req, res, next) => {
       expiresAt: Date.now() + (15 * 60 * 1000)
     };
 
-    // Await async SQL insertion
     await sessionStore.createSession(sessionData);
 
     return res.status(200).json({
@@ -49,13 +50,17 @@ router.post('/rent', async (req, res, next) => {
   }
 });
 
-// Get session status (with async SQL lookup & expiry check)
-router.get('/:phoneNumber', async (req, res) => {
+// GET /api/v1/sessions/:phoneNumber (PROTECTED)
+router.get('/:phoneNumber', authenticateToken, async (req, res) => {
   try {
     const session = await sessionStore.getSessionByPhone(req.params.phoneNumber);
 
     if (!session) {
       return res.status(404).json({ error: 'Session not found.' });
+    }
+
+    if (String(session.userId) !== String(req.user.id)) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
     }
 
     if (Date.now() > session.expiresAt && session.status === 'ACTIVE') {
@@ -71,13 +76,17 @@ router.get('/:phoneNumber', async (req, res) => {
   }
 });
 
-// Manual release
-router.post('/:phoneNumber/release', async (req, res) => {
+// POST /api/v1/sessions/:phoneNumber/release (PROTECTED)
+router.post('/:phoneNumber/release', authenticateToken, async (req, res) => {
   try {
     const session = await sessionStore.getSessionByPhone(req.params.phoneNumber);
 
     if (!session) {
       return res.status(404).json({ error: 'Session not found.' });
+    }
+
+    if (String(session.userId) !== String(req.user.id)) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
     }
 
     await telecomService.releasePhoneNumber(session.subaccountSid, session.subaccountToken, session.numberSid);

@@ -8,12 +8,13 @@ CREATE TABLE IF NOT EXISTS users (
     balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (balance >= 0),
     status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	password_hash VARCHAR(255) NOT NULL
 );
 
 -- 2. SESSIONS TABLE
 CREATE TABLE IF NOT EXISTS sessions (
     id VARCHAR(64) PRIMARY KEY,
-    user_id UUID,
+   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     service VARCHAR(64) NOT NULL,
     subaccount_sid VARCHAR(255) NOT NULL,
     subaccount_token VARCHAR(255) NOT NULL,
