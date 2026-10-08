@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const telecomService = require('../services/telecom.service');
 const sessionStore = require('../store/sessionStore');
+const billingService = require('../services/billing.service');
 const authenticateToken = require('../middleware/auth.middleware');
 
 // POST /api/v1/sessions/rent (PROTECTED)
@@ -14,14 +15,36 @@ router.post('/rent', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: 'service is required.' });
   }
 
-  try {
-    const subaccount = await telecomService.createSubaccount(userId);
-    const provisioned = await telecomService.provisionPhoneNumber(
-      subaccount.sid,
-      subaccount.authToken,
-      country
-    );
+  let holdData = null;
 
+  try {
+    // STEP 1: Transaction A — hold funds (~10ms, locks user row)
+    holdData = await billingService.holdRentalFunds(userId);
+
+    // STEP 2: External network call (OUTSIDE any DB transaction)
+    let subaccount, provisioned;
+    try {
+      subaccount = await telecomService.createSubaccount(userId);
+      provisioned = await telecomService.provisionPhoneNumber(
+        subaccount.sid,
+        subaccount.authToken,
+        country
+      );
+    } catch (telecomError) {
+      // STEP 2B: Twilio failed → compensate (refund the user)
+      console.error('[TELECOM PROVISIONING FAILED] Executing refund:', telecomError.message);
+      await billingService.compensateFailedRental(
+        userId,
+        holdData.holdReference,
+        telecomError.message
+      );
+      return res.status(502).json({
+        error: 'Failed to provision phone number. Your funds have been refunded.',
+        details: telecomError.message
+      });
+    }
+
+    // STEP 3: Insert session row
     const sessionData = {
       id: `sess_${Date.now()}`,
       userId,
@@ -45,8 +68,9 @@ router.post('/rent', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[RENTAL ERROR]:', error.message);
-    return res.status(500).json({ error: 'Failed to provision number.', details: error.message });
+    console.error('[RENTAL ROUTE ERROR]:', error.message);
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({ error: error.message });
   }
 });
 
@@ -63,13 +87,18 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
     }
 
+    // Passive expiry check + idempotent refund trigger
     if (Date.now() > session.expiresAt && session.status === 'ACTIVE') {
-      await sessionStore.updateSessionStatus(req.params.phoneNumber, 'EXPIRED');
+      const refunded = await billingService.refundExpiredSession(session.id, req.user.id);
       session.status = 'EXPIRED';
-      return res.status(410).json({ error: 'Session has expired.' });
+      return res.status(410).json({
+        error: 'Session has expired.',
+        refundIssued: refunded
+      });
     }
 
     return res.status(200).json(session);
+
   } catch (error) {
     console.error('[GET SESSION ERROR]:', error.message);
     return res.status(500).json({ error: 'Database query failed.' });
@@ -89,10 +118,15 @@ router.post('/:phoneNumber/release', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
     }
 
-    await telecomService.releasePhoneNumber(session.subaccountSid, session.subaccountToken, session.numberSid);
+    await telecomService.releasePhoneNumber(
+      session.subaccountSid,
+      session.subaccountToken,
+      session.numberSid
+    );
     await sessionStore.deleteSession(req.params.phoneNumber);
 
     return res.status(200).json({ success: true, message: 'Number released.' });
+
   } catch (error) {
     console.error('[RELEASE ERROR]:', error.message);
     return res.status(500).json({ error: 'Failed to release number.', details: error.message });
