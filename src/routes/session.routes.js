@@ -4,6 +4,7 @@ const router = express.Router();
 const telecomService = require('../services/telecom.service');
 const sessionStore = require('../store/sessionStore');
 const billingService = require('../services/billing.service');
+const catalogService = require('../services/catalog.service');
 const authenticateToken = require('../middleware/auth.middleware');
 
 // POST /api/v1/sessions/rent (PROTECTED)
@@ -15,13 +16,28 @@ router.post('/rent', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: 'service is required.' });
   }
 
+  // 1. Dynamic catalog price lookup
+  let costCents;
+  try {
+    costCents = await catalogService.getPriceForService(country, service);
+  } catch (err) {
+    console.error('[CATALOG LOOKUP ERROR]:', err.message);
+    return res.status(500).json({ error: 'Failed to look up pricing.' });
+  }
+
+  if (!costCents) {
+    return res.status(404).json({
+      error: `No available inventory for ${service} in ${country}.`
+    });
+  }
+
   let holdData = null;
 
   try {
-    // STEP 1: Transaction A — hold funds (~10ms, locks user row)
-    holdData = await billingService.holdRentalFunds(userId);
+    // STEP 1: Transaction A — hold exact dynamic cost
+    holdData = await billingService.holdRentalFunds(userId, costCents);
 
-    // STEP 2: External network call (OUTSIDE any DB transaction)
+    // STEP 2: Network call (outside any transaction)
     let subaccount, provisioned;
     try {
       subaccount = await telecomService.createSubaccount(userId);
@@ -31,11 +47,11 @@ router.post('/rent', authenticateToken, async (req, res) => {
         country
       );
     } catch (telecomError) {
-      // STEP 2B: Twilio failed → compensate (refund the user)
       console.error('[TELECOM PROVISIONING FAILED] Executing refund:', telecomError.message);
       await billingService.compensateFailedRental(
         userId,
         holdData.holdReference,
+        costCents,
         telecomError.message
       );
       return res.status(502).json({
@@ -44,11 +60,12 @@ router.post('/rent', authenticateToken, async (req, res) => {
       });
     }
 
-    // STEP 3: Insert session row
+    // STEP 3: Insert session row with locked cost_cents
     const sessionData = {
       id: `sess_${Date.now()}`,
       userId,
       service,
+      costCents,
       subaccountSid: subaccount.sid,
       subaccountToken: subaccount.authToken,
       numberSid: provisioned.numberSid,
@@ -64,6 +81,7 @@ router.post('/rent', authenticateToken, async (req, res) => {
       sessionId: sessionData.id,
       phoneNumber: sessionData.phoneNumber,
       service: sessionData.service,
+      costCents: sessionData.costCents,
       expiresAt: sessionData.expiresAt
     });
 
@@ -87,7 +105,12 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
     }
 
-    // Passive expiry check + idempotent refund trigger
+    // Final state — no further processing
+    if (session.status === 'EXPIRED' || session.status === 'COMPLETED') {
+      return res.status(200).json(session);
+    }
+
+    // Active session past expiry — trigger idempotent refund
     if (Date.now() > session.expiresAt && session.status === 'ACTIVE') {
       const refunded = await billingService.refundExpiredSession(session.id, req.user.id);
       session.status = 'EXPIRED';

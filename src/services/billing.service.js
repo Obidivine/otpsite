@@ -1,23 +1,17 @@
 // src/services/billing.service.js
 const db = require('../config/db');
 
-// Cost per rental in KOBO/CENTS (100 = $1.00 or ₦1.00)
-const RENTAL_COST_KOBO = parseInt(process.env.RENTAL_COST_KOBO || '100', 10);
-
 class BillingService {
   /**
-   * TRANSACTION A: Atomic Balance Check & Deduct
-   * Runs when a user requests a rental. Locks the user row, checks balance,
-   * deducts the cost, and records a HOLD transaction. All in ~10ms.
+   * TRANSACTION A: Atomic Balance Check & Hold (USD Cents)
    */
-  async holdRentalFunds(userId) {
+  async holdRentalFunds(userId, costCents) {
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
 
-      // 1. Lock the user row (prevents concurrent double-spend)
       const userRes = await client.query(
-        `SELECT balance FROM public.users WHERE id = $1 FOR UPDATE;`,
+        `SELECT balance_cents FROM public.users WHERE id = $1 FOR UPDATE;`,
         [userId]
       );
 
@@ -27,32 +21,28 @@ class BillingService {
         throw err;
       }
 
-      const balanceKobo = parseInt(userRes.rows[0].balance, 10);
+      const balanceCents = parseInt(userRes.rows[0].balance_cents, 10);
 
-      if (balanceKobo < RENTAL_COST_KOBO) {
-        const err = new Error(
-          `Insufficient funds. Required: ${RENTAL_COST_KOBO} kobo, Available: ${balanceKobo} kobo.`
-        );
+      if (balanceCents < costCents) {
+        const err = new Error(`Insufficient balance. Required: ${costCents} cents, Available: ${balanceCents} cents.`);
         err.statusCode = 402;
         throw err;
       }
 
-      // 2. Deduct funds
       await client.query(
-        `UPDATE public.users SET balance = balance - $1 WHERE id = $2;`,
-        [RENTAL_COST_KOBO, userId]
+        `UPDATE public.users SET balance_cents = balance_cents - $1 WHERE id = $2;`,
+        [costCents, userId]
       );
 
-      // 3. Record HOLD transaction in ledger
       const holdReference = `hold_${userId}_${Date.now()}`;
       await client.query(
-        `INSERT INTO public.transactions (user_id, amount, type, reference, status, notes)
-         VALUES ($1, $2, 'HOLD', $3, 'COMPLETED', 'Temporary hold for phone rental');`,
-        [userId, -RENTAL_COST_KOBO, holdReference]
+        `INSERT INTO public.transactions (user_id, amount_cents, type, reference, status, notes)
+         VALUES ($1, $2, 'HOLD', $3, 'COMPLETED', 'Temporary hold for number rental');`,
+        [userId, -costCents, holdReference]
       );
 
       await client.query('COMMIT');
-      return { holdReference, amountKobo: RENTAL_COST_KOBO };
+      return { holdReference, amountCents: costCents };
 
     } catch (err) {
       await client.query('ROLLBACK');
@@ -63,41 +53,36 @@ class BillingService {
   }
 
   /**
-   * TRANSACTION C: Compensating Refund (Twilio provisioning failure)
-   * Called when the telecom provider fails AFTER we've already held the funds.
+   * TRANSACTION C: Compensation Refund (Provisioning Failure)
    */
-  async compensateFailedRental(userId, holdReference, failureReason) {
+  async compensateFailedRental(userId, holdReference, costCents, failureReason) {
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
 
-      // 1. Lock user row
       await client.query(
         `SELECT id FROM public.users WHERE id = $1 FOR UPDATE;`,
         [userId]
       );
 
-      // 2. Credit funds back
       await client.query(
-        `UPDATE public.users SET balance = balance + $1 WHERE id = $2;`,
-        [RENTAL_COST_KOBO, userId]
+        `UPDATE public.users SET balance_cents = balance_cents + $1 WHERE id = $2;`,
+        [costCents, userId]
       );
 
-      // 3. Record REFUND transaction
       const refundReference = `refund_fail_${holdReference}`;
       await client.query(
-        `INSERT INTO public.transactions (user_id, amount, type, reference, status, notes)
+        `INSERT INTO public.transactions (user_id, amount_cents, type, reference, status, notes)
          VALUES ($1, $2, 'REFUND', $3, 'COMPLETED', $4);`,
-        [userId, RENTAL_COST_KOBO, refundReference, `Compensating refund: ${failureReason}`]
+        [userId, costCents, refundReference, `Compensating refund: ${failureReason}`]
       );
 
       await client.query('COMMIT');
-      console.log(`[REFUND SUCCESS] User ${userId} credited ${RENTAL_COST_KOBO} kobo.`);
+      console.log(`[REFUND SUCCESS] User ${userId} credited ${costCents} cents.`);
+
     } catch (err) {
       await client.query('ROLLBACK');
       console.error('[CRITICAL REFUND ERROR]', userId, err.message);
-      // Note: we swallow this error so the route can still return 502 to the user.
-      // In production, this should alert monitoring.
     } finally {
       client.release();
     }
@@ -105,17 +90,14 @@ class BillingService {
 
   /**
    * TRANSACTION D: Idempotent Expiry Refund
-   * Called when a session expires without receiving an OTP.
-   * Uses `refunded_at` to guarantee a session is only refunded once.
    */
   async refundExpiredSession(sessionId, userId) {
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
 
-      // 1. Lock session row and check idempotency
       const sessionRes = await client.query(
-        `SELECT id, status, refunded_at FROM public.sessions WHERE id = $1 FOR UPDATE;`,
+        `SELECT id, status, refunded_at, cost_cents FROM public.sessions WHERE id = $1 FOR UPDATE;`,
         [sessionId]
       );
 
@@ -127,29 +109,27 @@ class BillingService {
       const session = sessionRes.rows[0];
 
       if (session.refunded_at !== null || session.status === 'COMPLETED') {
-        // Already refunded or OTP was received — no refund
         await client.query('ROLLBACK');
         return false;
       }
 
-      // 2. Mark session as EXPIRED + stamp refunded_at
+      const costCents = parseInt(session.cost_cents, 10);
+
       await client.query(
         `UPDATE public.sessions SET status = 'EXPIRED', refunded_at = NOW() WHERE id = $1;`,
         [sessionId]
       );
 
-      // 3. Refund user wallet
       await client.query(
-        `UPDATE public.users SET balance = balance + $1 WHERE id = $2;`,
-        [RENTAL_COST_KOBO, userId]
+        `UPDATE public.users SET balance_cents = balance_cents + $1 WHERE id = $2;`,
+        [costCents, userId]
       );
 
-      // 4. Log REFUND transaction
       const refundRef = `refund_exp_${sessionId}`;
       await client.query(
-        `INSERT INTO public.transactions (user_id, session_id, amount, type, reference, status, notes)
+        `INSERT INTO public.transactions (user_id, session_id, amount_cents, type, reference, status, notes)
          VALUES ($1, $2, $3, 'REFUND', $4, 'COMPLETED', 'Automatic refund for expired session');`,
-        [userId, sessionId, RENTAL_COST_KOBO, refundRef]
+        [userId, sessionId, costCents, refundRef]
       );
 
       await client.query('COMMIT');

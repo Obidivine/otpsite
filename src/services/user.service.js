@@ -17,12 +17,22 @@ class UserService {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     const query = `
-      INSERT INTO public.users (email, password_hash, balance)
-      VALUES ($1, $2, 0.00)
-      RETURNING id, email, balance, created_at;
+      INSERT INTO public.users (email, password_hash, balance_cents)
+      VALUES ($1, $2, 0)
+      RETURNING id, email, balance_cents, created_at;
     `;
-    const { rows } = await db.query(query, [email.toLowerCase().trim(), hashedPassword]);
-    return rows[0];
+    const { rows } = await db.query(query, [
+      email.toLowerCase().trim(),
+      hashedPassword
+    ]);
+
+    const user = rows[0];
+    return {
+      id: user.id,
+      email: user.email,
+      balance_cents: parseInt(user.balance_cents, 10),
+      created_at: user.created_at
+    };
   }
 
   async authenticateUser(email, password) {
@@ -47,7 +57,7 @@ class UserService {
       user: {
         id: user.id,
         email: user.email,
-        balance: parseFloat(user.balance)
+        balance_cents: parseInt(user.balance_cents, 10)
       }
     };
   }
