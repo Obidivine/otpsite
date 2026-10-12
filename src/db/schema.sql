@@ -79,3 +79,15 @@ CREATE TABLE IF NOT EXISTS public.pricing (
     is_available BOOLEAN DEFAULT TRUE,
     CONSTRAINT unique_country_service UNIQUE (country_code, service_id)
 );
+
+-- 8. PAYMENT INTENTS TABLE
+CREATE TABLE IF NOT EXISTS public.payment_intents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    tx_ref VARCHAR(255) UNIQUE NOT NULL,
+    amount_cents BIGINT NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_intents_ref ON public.payment_intents(tx_ref);

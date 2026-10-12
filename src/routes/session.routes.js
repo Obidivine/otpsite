@@ -6,9 +6,11 @@ const sessionStore = require('../store/sessionStore');
 const billingService = require('../services/billing.service');
 const catalogService = require('../services/catalog.service');
 const authenticateToken = require('../middleware/auth.middleware');
+const { rentLimiter } = require('../middleware/ratelimit.middleware');
+const schedulerService = require('../services/scheduler.service');
 
 // POST /api/v1/sessions/rent (PROTECTED)
-router.post('/rent', authenticateToken, async (req, res) => {
+router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
   const { country = 'US', service } = req.body;
   const userId = req.user.id;
 
@@ -75,6 +77,14 @@ router.post('/rent', authenticateToken, async (req, res) => {
     };
 
     await sessionStore.createSession(sessionData);
+
+    // STEP 4: Schedule QStash expiry check (non-blocking — failure here doesn't fail the rental)
+    try {
+      await schedulerService.scheduleSessionExpiry(sessionData.id, sessionData.phoneNumber);
+    } catch (schedulerError) {
+      console.error('[SCHEDULER FAILED] Passive polling will handle expiry:', schedulerError.message);
+      // Intentionally do not rethrow — the rental succeeded, and passive polling is the fallback
+    }
 
     return res.status(200).json({
       success: true,

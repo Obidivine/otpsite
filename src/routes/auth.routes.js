@@ -2,9 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const userService = require('../services/user.service');
+const { authLimiter } = require('../middleware/ratelimit.middleware');
 
 // POST /api/v1/auth/signup
-router.post('/signup', async (req, res) => {
+router.post('/signup', authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -31,7 +32,7 @@ router.post('/signup', async (req, res) => {
 });
 
 // POST /api/v1/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
