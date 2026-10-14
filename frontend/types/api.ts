@@ -19,7 +19,7 @@ export interface CatalogItem {
   flag_emoji: string;
   price_cents: number;
   stock_count: number;
-  success_rate: number;
+  success_rate: number | string;
   is_available: boolean;
 }
 
