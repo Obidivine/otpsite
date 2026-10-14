@@ -44,6 +44,101 @@ router.post('/wallet/topup/init', authenticateToken, async (req, res) => {
 });
 
 // ==========================================
+// 1b. POST /api/v1/wallet/topup/checkout
+// Calls Flutterwave to generate hosted checkout URL
+// ==========================================
+router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
+  const { txRef } = req.body;
+  const userId = req.user.id;
+
+  if (!txRef) {
+    return res.status(400).json({ error: 'txRef is required.' });
+  }
+
+  try {
+    // 1. Verify the intent exists and belongs to this user
+    const intentRes = await db.query(
+      `SELECT tx_ref, user_id, amount_cents, status 
+       FROM public.payment_intents 
+       WHERE tx_ref = $1 AND user_id = $2;`,
+      [txRef, userId]
+    );
+
+    if (intentRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Payment intent not found.' });
+    }
+
+    const intent = intentRes.rows[0];
+
+    if (intent.status !== 'PENDING') {
+      return res.status(400).json({ 
+        error: 'Payment intent already processed.',
+        status: intent.status
+      });
+    }
+
+    // 2. Get user's email
+    const userRes = await db.query(
+      `SELECT email FROM public.users WHERE id = $1;`,
+      [userId]
+    );
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const userEmail = userRes.rows[0].email;
+
+    // 3. Convert USD cents → NGN for Flutterwave
+    const amountNGN = (parseInt(intent.amount_cents, 10) / 100) * USD_NGN_RATE;
+
+    // 4. Call Flutterwave to create payment
+    const flwResponse = await fetch('https://api.flutterwave.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.FLW_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        tx_ref: txRef,
+        amount: amountNGN,
+        currency: 'NGN',
+        redirect_url: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/dashboard/wallet?status=success`,
+        customer: {
+          email: userEmail,
+        },
+        customizations: {
+          title: 'OTP Reseller Top-Up',
+          description: `Wallet top-up of $${(parseInt(intent.amount_cents, 10) / 100).toFixed(2)}`,
+        },
+      }),
+    });
+
+    const flwData = await flwResponse.json();
+
+    if (flwData.status !== 'success' || !flwData.data?.link) {
+      console.error('[FLUTTERWAVE CHECKOUT ERROR]:', flwData);
+      return res.status(502).json({
+        error: 'Failed to create Flutterwave checkout.',
+        details: flwData.message || 'Unknown error',
+      });
+    }
+
+    // 5. Return the hosted payment link
+    return res.status(200).json({
+      success: true,
+      txRef,
+      amountNGN,
+      checkoutUrl: flwData.data.link,
+    });
+
+  } catch (err) {
+    console.error('[CHECKOUT ERROR]:', err.message);
+    return res.status(500).json({ error: 'Failed to initiate checkout.' });
+  }
+});
+
+// ==========================================
 // 2. GET /api/v1/wallet/balance
 // ==========================================
 router.get('/wallet/balance', authenticateToken, async (req, res) => {

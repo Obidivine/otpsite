@@ -11,7 +11,7 @@ import type {
   SessionsListResponse,
 } from '@/types/api';
 
-export function useBalance() {
+export function useBalance(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['balance'],
     queryFn: async () => {
@@ -19,6 +19,7 @@ export function useBalance() {
       return data;
     },
     refetchInterval: 10000,
+    enabled: options?.enabled ?? true,
   });
 }
 

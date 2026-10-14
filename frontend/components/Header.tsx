@@ -12,7 +12,12 @@ export function Header() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const { data: balanceData } = useBalance();
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const token = useAuthStore((s) => s.token);
+
+  const { data: balanceData } = useBalance({
+    enabled: hasHydrated && !!token,
+  });
 
   function handleLogout() {
     logout();
