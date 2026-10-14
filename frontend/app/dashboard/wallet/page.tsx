@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { DollarSign, ArrowDownCircle, ArrowUpCircle, Wallet } from 'lucide-react';
 
-const PRESET_AMOUNTS = [500, 1000, 2000, 5000]; // cents: $5, $10, $20, $50
+const PRESET_AMOUNTS = [300, 500, 1000, 2000]; // cents: $3, $5, $10, $20
 
 export default function WalletPage() {
   return (
@@ -106,10 +106,10 @@ function WalletContent() {
   function openConfirmation() {
     setError(null);
 
-    if (amountCents < 100) {
-      setError('Minimum top-up amount is $1.00.');
-      return;
-    }
+    if (amountCents < 300) {
+  setError('Minimum top-up amount is $3.00.');
+  return;
+}
     if (amountCents > 50000) {
       setError('Maximum top-up amount is $500.00.');
       return;
@@ -217,22 +217,25 @@ function WalletContent() {
           </div>
 
           <div>
-            <Label htmlFor="customAmount" className="text-xs uppercase tracking-wide text-slate-500">
-              Or enter custom amount (USD)
-            </Label>
-            <div className="relative mt-2">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                id="customAmount"
-                type="text"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={customAmount}
-                onChange={(e) => handleCustomAmountChange(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
+  <Label htmlFor="customAmount" className="text-xs uppercase tracking-wide text-slate-500">
+    Or enter custom amount (USD)
+  </Label>
+  <div className="relative mt-2">
+    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+    <Input
+      id="customAmount"
+      type="text"
+      inputMode="decimal"
+      placeholder="0.00"
+      value={customAmount}
+      onChange={(e) => handleCustomAmountChange(e.target.value)}
+      className="pl-9"
+    />
+  </div>
+  <p className="text-xs text-slate-500 mt-1.5">
+    Minimum $3.00 · Maximum $500.00
+  </p>
+</div>
 
           {error && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
@@ -241,18 +244,25 @@ function WalletContent() {
           )}
 
           <div className="pt-2 border-t">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-slate-600">You're topping up:</span>
-              <span className="text-lg font-semibold">{amountUSD}</span>
-            </div>
-            <Button
-              onClick={openConfirmation}
-              disabled={amountCents < 100 || isProcessing}
-              className="w-full"
-            >
-              {isProcessing ? 'Processing...' : `Top Up ${amountUSD}`}
-            </Button>
-          </div>
+  <div className="flex items-center justify-between mb-3">
+    <span className="text-sm text-slate-600">You're topping up:</span>
+    <span className="text-lg font-semibold">{amountUSD}</span>
+  </div>
+
+  {amountCents > 0 && amountCents < 300 && (
+    <p className="text-xs text-amber-600 mb-2">
+      Minimum top-up is $3.00. Please enter at least $3.
+    </p>
+  )}
+
+  <Button
+    onClick={openConfirmation}
+    disabled={amountCents < 300 || isProcessing}
+    className="w-full"
+  >
+    {isProcessing ? 'Processing...' : `Top Up ${amountUSD}`}
+  </Button>
+</div>
         </CardContent>
       </Card>
 
