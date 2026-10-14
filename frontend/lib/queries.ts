@@ -97,3 +97,17 @@ export function useTopupInit() {
     },
   });
 }
+
+export function useTopupCheckout() {
+  return useMutation({
+    mutationFn: async ({ txRef }: { txRef: string }) => {
+      const { data } = await api.post<{
+        success: boolean;
+        txRef: string;
+        amountNGN: number;
+        checkoutUrl: string;
+      }>('/api/v1/wallet/topup/checkout', { txRef });
+      return data;
+    },
+  });
+}
