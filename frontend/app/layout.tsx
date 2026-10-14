@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OTP Reseller",
-  description: "Get foreign phone numbers for OTP verification",
+  title: "OTP Reseller — Foreign phone numbers for OTP verification",
+  description:
+    "Get instant access to US, UK, and European phone numbers for verifying WhatsApp, Telegram, Instagram, and TikTok accounts. No SIM card needed.",
 };
 
 export default function RootLayout({
