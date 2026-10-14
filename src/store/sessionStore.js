@@ -62,6 +62,31 @@ class SessionStore {
     };
   }
 
+async getUserSessions(userId) {
+  const query = `
+    SELECT 
+      id, user_id, service, cost_cents, phone_number, status, 
+      expires_at, refunded_at, created_at
+    FROM public.sessions
+    WHERE user_id = $1
+    ORDER BY created_at DESC
+    LIMIT 50;
+  `;
+  const { rows } = await db.query(query, [userId]);
+  
+  return rows.map((row) => ({
+    id: row.id,
+    userId: row.user_id,
+    service: row.service,
+    costCents: parseInt(row.cost_cents, 10),
+    phoneNumber: row.phone_number,
+    status: row.status,
+    expiresAt: new Date(row.expires_at).getTime(),
+    refundedAt: row.refunded_at,
+    createdAt: row.created_at,
+  }));
+}
+
   async updateSessionStatus(phoneNumber, status) {
     const query = `
       UPDATE public.sessions SET status = $1 WHERE phone_number = $2 RETURNING *;

@@ -102,6 +102,18 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
   }
 });
 
+// GET /api/v1/sessions (PROTECTED)
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const sessions = await sessionStore.getUserSessions(req.user.id);
+    return res.status(200).json({ success: true, sessions });
+  } catch (error) {
+    console.error('[GET SESSIONS ERROR]:', error.message);
+    return res.status(500).json({ error: 'Failed to fetch sessions.' });
+  }
+});
+
+
 // GET /api/v1/sessions/:phoneNumber (PROTECTED)
 router.get('/:phoneNumber', authenticateToken, async (req, res) => {
   try {

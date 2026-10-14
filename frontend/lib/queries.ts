@@ -8,6 +8,7 @@ import type {
   BalanceResponse,
   TransactionsResponse,
   TopupInitResponse,
+  SessionsListResponse,
 } from '@/types/api';
 
 export function useBalance() {
@@ -55,6 +56,17 @@ export function useTransactions() {
       const { data } = await api.get<TransactionsResponse>('/api/v1/wallet/transactions');
       return data;
     },
+  });
+}
+
+export function useUserSessions() {
+  return useQuery({
+    queryKey: ['sessions'],
+    queryFn: async () => {
+      const { data } = await api.get<SessionsListResponse>('/api/v1/sessions');
+      return data;
+    },
+    refetchInterval: 5000, // Refresh every 5s so expiry updates live
   });
 }
 

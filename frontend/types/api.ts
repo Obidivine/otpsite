@@ -85,3 +85,21 @@ export interface TopupInitResponse {
   amountNGN: number;
   currency: 'NGN';
 }
+
+// Session summary (as returned by GET /api/v1/sessions)
+export interface SessionSummary {
+  id: string;
+  userId: string;
+  service: string;
+  costCents: number;
+  phoneNumber: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'EXPIRED' | 'RELEASED';
+  expiresAt: number;
+  refundedAt: string | null;
+  createdAt: string;
+}
+
+export interface SessionsListResponse {
+  success: boolean;
+  sessions: SessionSummary[];
+}
