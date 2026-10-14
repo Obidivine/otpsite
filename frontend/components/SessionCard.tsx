@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { SessionSummary } from '@/types/api';
@@ -18,6 +19,16 @@ export function SessionCard({ session }: SessionCardProps) {
   const isVisuallyExpired =
     session.status === 'ACTIVE' && session.expiresAt <= Date.now();
 
+  // Force a re-render every second while active so the countdown ticks live
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    if (!isActive) return;
+    const interval = setInterval(() => {
+      forceTick((t) => t + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isActive]);
+
   const timeRemaining = isActive
     ? Math.max(0, Math.floor((session.expiresAt - Date.now()) / 1000))
     : 0;
@@ -25,7 +36,6 @@ export function SessionCard({ session }: SessionCardProps) {
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
 
-  // Determine visual state
   const displayStatus = isVisuallyExpired ? 'EXPIRED' : session.status;
 
   const statusColor = isActive
@@ -82,7 +92,10 @@ export function SessionCard({ session }: SessionCardProps) {
           </div>
 
           {isActive && (
-            <Link href={`/dashboard/session/${encodeURIComponent(session.phoneNumber)}`}>
+            <Link
+              href={`/dashboard/session/${encodeURIComponent(session.phoneNumber)}`}
+              prefetch={false}
+            >
               <Button size="sm">View</Button>
             </Link>
           )}
