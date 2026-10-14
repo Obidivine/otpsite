@@ -6,6 +6,7 @@ import { useBalance } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Plus } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function BalanceCard() {
   const { data, isLoading } = useBalance();
@@ -23,9 +24,11 @@ export function BalanceCard() {
         <DollarSign className="h-4 w-4 text-slate-500" />
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">
-          {isLoading ? '...' : balanceUSD}
-        </div>
+       {isLoading ? (
+  <Skeleton className="h-9 w-32" />
+) : (
+  <div className="text-3xl font-bold">{balanceUSD}</div>
+)}
         <p className="text-xs text-slate-500 mt-1">
           Available for new rentals
         </p>

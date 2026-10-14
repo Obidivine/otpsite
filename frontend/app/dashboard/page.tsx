@@ -10,6 +10,7 @@ import { useUserSessions } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Phone, History } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
   return (
@@ -90,8 +91,12 @@ const activeSessions = sessions.filter(
         </div>
 
         {isLoading ? (
-          <p className="text-slate-500">Loading sessions...</p>
-        ) : activeSessions.length === 0 ? (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {[1, 2].map((i) => (
+      <Skeleton key={i} className="h-32 rounded-xl" />
+    ))}
+  </div>
+) : activeSessions.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
               <p className="text-slate-500 mb-4">

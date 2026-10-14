@@ -10,6 +10,7 @@ import type { AuthResponse } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import {
   Card,
   CardContent,
@@ -40,7 +41,8 @@ export default function SignupPage() {
       });
 
       setAuth(data.token, data.user);
-      router.push('/dashboard');
+toast.success('Account created! Welcome aboard.');
+router.push('/dashboard');
     } catch (err: any) {
       const message =
         err.response?.data?.error ||

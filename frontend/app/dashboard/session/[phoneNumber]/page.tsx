@@ -11,8 +11,10 @@ import { useSession } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Copy, Check, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SessionPage() {
   return (
@@ -51,6 +53,17 @@ function SessionLoader() {
 
 function SessionContent({ phoneNumber }: { phoneNumber: string }) {
   const { data: session, isLoading, error } = useSession(phoneNumber);
+    const lastOtpCode = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (session?.otp?.code && session.otp.code !== lastOtpCode.current) {
+      lastOtpCode.current = session.otp.code;
+      toast.success('Verification code received!', {
+        description: `Code: ${session.otp.code}`,
+        duration: 10000,
+      });
+    }
+  }, [session?.otp?.code]);
   const [copiedNumber, setCopiedNumber] = useState(false);
 
   async function copyPhoneNumber() {
@@ -63,13 +76,16 @@ function SessionContent({ phoneNumber }: { phoneNumber: string }) {
     }
   }
 
-  if (isLoading) {
+    if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center text-slate-500">
-          Loading session...
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-6 w-16" />
+        </div>
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-40 rounded-xl" />
+      </div>
     );
   }
 

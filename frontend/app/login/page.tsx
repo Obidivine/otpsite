@@ -9,6 +9,7 @@ import { useAuthStore } from '@/lib/store';
 import type { AuthResponse } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import {
   Card,
@@ -40,7 +41,8 @@ export default function LoginPage() {
       });
 
       setAuth(data.token, data.user);
-      router.push('/dashboard');
+toast.success('Welcome back!');
+router.push('/dashboard');
     } catch (err: any) {
       const message =
         err.response?.data?.error ||

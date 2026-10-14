@@ -10,6 +10,8 @@ import { CountryCard } from '@/components/CountryCard';
 import { useCatalog, useRentNumber, useBalance } from '@/lib/queries';
 import type { CatalogItem } from '@/types/api';
 import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function RentPage() {
   return (
@@ -40,9 +42,16 @@ function RentContent() {
   async function handleRent(item: CatalogItem) {
     setError(null);
 
-    if (balanceCents < item.price_cents) {
-      setError(
-        `Insufficient balance. You need $${(item.price_cents / 100).toFixed(2)} but have $${(balanceCents / 100).toFixed(2)}. Top up your wallet to continue.`
+        if (balanceCents < item.price_cents) {
+      toast.error(
+        `Insufficient balance. Top up your wallet to continue.`,
+        {
+          description: `You need $${(item.price_cents / 100).toFixed(2)} but have $${(balanceCents / 100).toFixed(2)}.`,
+          action: {
+            label: 'Top Up',
+            onClick: () => router.push('/dashboard/wallet'),
+          },
+        }
       );
       return;
     }
@@ -55,6 +64,7 @@ function RentContent() {
         country: item.country_code,
       });
 
+            toast.success(`Number rented! ${result.phoneNumber}`);
       router.push(
         `/dashboard/session/${encodeURIComponent(result.phoneNumber)}`
       );
@@ -64,7 +74,7 @@ function RentContent() {
         err.response?.data?.details ||
         err.message ||
         'Failed to rent number. Please try again.';
-      setError(message);
+      toast.error(message);
     } finally {
       setRentingCountry(null);
     }
@@ -103,8 +113,12 @@ function RentContent() {
         </h2>
 
         {isLoading ? (
-          <p className="text-slate-500">Loading catalog...</p>
-        ) : catalog.length === 0 ? (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {[1, 2, 3, 4, 5, 6].map((i) => (
+      <Skeleton key={i} className="h-48 rounded-xl" />
+    ))}
+  </div>
+) : catalog.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-slate-500">
               No numbers available for this service right now. Try another service.

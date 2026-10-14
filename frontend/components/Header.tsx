@@ -7,6 +7,7 @@ import { useAuthStore } from '@/lib/store';
 import { useBalance } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function Header() {
   const router = useRouter();
@@ -51,11 +52,16 @@ export function Header() {
 
           <div className="flex items-center gap-4">
             <Link
-              href="/dashboard/wallet"
-              className="text-sm font-medium text-slate-700 hover:text-slate-900"
-            >
-              Balance: <span className="text-slate-900">{balanceUSD}</span>
-            </Link>
+  href="/dashboard/wallet"
+  className="text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1.5"
+	>
+  Balance:{' '}
+  {balanceData ? (
+    <span className="text-slate-900">{balanceUSD}</span>
+  ) : (
+    <Skeleton className="h-4 w-12 inline-block" />
+  )}
+</Link>
 
             <span className="hidden sm:inline text-sm text-slate-500">
               {user?.email}

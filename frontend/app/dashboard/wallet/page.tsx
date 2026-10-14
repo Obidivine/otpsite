@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Header } from '@/components/Header';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useBalance,
   useTransactions,
@@ -57,22 +59,20 @@ function WalletContent() {
   const [customAmount, setCustomAmount] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successBanner, setSuccessBanner] = useState(false);
+  
 
   const initMutation = useTopupInit();
   const checkoutMutation = useTopupCheckout();
 
   // Handle Flutterwave return
-  useEffect(() => {
+    useEffect(() => {
     if (returnStatus === 'success' || returnStatus === 'successful') {
-      setSuccessBanner(true);
+      toast.success('Payment received! Updating your balance...');
       // Give the webhook ~2 seconds to land before refetching
       setTimeout(() => {
         refetchBalance();
         refetchTx();
       }, 2000);
-      // Auto-hide banner after 8 seconds
-      setTimeout(() => setSuccessBanner(false), 8000);
     }
   }, [returnStatus, refetchBalance, refetchTx]);
 
@@ -133,13 +133,13 @@ function WalletContent() {
 
       // Step 3: Redirect the user to Flutterwave
       window.location.href = checkoutResult.checkoutUrl;
-    } catch (err: any) {
+        } catch (err: any) {
       const message =
         err.response?.data?.error ||
         err.response?.data?.details ||
         err.message ||
         'Failed to start top-up. Please try again.';
-      setError(message);
+      toast.error(message);
     }
   }
 
@@ -149,20 +149,7 @@ function WalletContent() {
 
   return (
     <div className="space-y-6">
-      {/* Success banner */}
-      {successBanner && (
-        <div className="bg-green-50 border border-green-200 text-green-800 rounded-md p-4 flex items-center justify-between">
-          <span className="font-medium">
-            Payment received. Your balance will update in a moment.
-          </span>
-          <button
-            onClick={() => setSuccessBanner(false)}
-            className="text-green-600 hover:text-green-800 font-bold"
-          >
-            ×
-          </button>
-        </div>
-      )}
+     
 
       <div>
         <h1 className="text-3xl font-bold">Wallet</h1>
@@ -273,11 +260,17 @@ function WalletContent() {
           <CardDescription>Your most recent wallet activity</CardDescription>
         </CardHeader>
         <CardContent>
-          {transactions.length === 0 ? (
-            <p className="text-slate-500 text-center py-6">
-              No transactions yet. Top up to get started.
-            </p>
-          ) : (
+          {!txData ? (
+  <div className="space-y-2">
+    {[1, 2, 3].map((i) => (
+      <Skeleton key={i} className="h-16 rounded-lg" />
+    ))}
+  </div>
+) : transactions.length === 0 ? (
+  <p className="text-slate-500 text-center py-6">
+    No transactions yet. Top up to get started.
+  </p>
+) : (
             <div className="space-y-2">
               {transactions.map((tx) => {
                 const isCredit = tx.amount_cents > 0;
