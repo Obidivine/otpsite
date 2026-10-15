@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Phone, History } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/EmptyState';
+
+
 
 export default function DashboardPage() {
   return (
@@ -97,17 +100,14 @@ const activeSessions = sessions.filter(
     ))}
   </div>
 ) : activeSessions.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-slate-500 mb-4">
-                No active sessions. Rent a number to get started.
-              </p>
-              <Link href="/dashboard/rent">
-                <Button>Rent Your First Number</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
+  <EmptyState
+    icon={Phone}
+    title="No active sessions"
+    description="Rent a phone number to start receiving verification codes. Sessions appear here while they're active."
+    actionLabel="Rent Your First Number"
+    actionHref="/dashboard/rent"
+  />
+) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {activeSessions.map((session) => (
               <SessionCard key={session.id} session={session} />

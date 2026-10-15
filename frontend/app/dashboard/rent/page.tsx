@@ -12,6 +12,8 @@ import type { CatalogItem } from '@/types/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/EmptyState';
+import { Package } from 'lucide-react';
 
 export default function RentPage() {
   return (
@@ -119,12 +121,12 @@ function RentContent() {
     ))}
   </div>
 ) : catalog.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center text-slate-500">
-              No numbers available for this service right now. Try another service.
-            </CardContent>
-          </Card>
-        ) : (
+  <EmptyState
+    icon={Package}
+    title="No numbers available"
+    description={`We don't have any numbers for ${service} right now. Try another service from the dropdown above.`}
+  />
+) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {catalog.map((item) => (
               <CountryCard

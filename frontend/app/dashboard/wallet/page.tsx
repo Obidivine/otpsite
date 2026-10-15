@@ -32,6 +32,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { DollarSign, ArrowDownCircle, ArrowUpCircle, Wallet } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { Receipt } from 'lucide-react';
 
 const PRESET_AMOUNTS = [300, 500, 1000, 2000]; // cents: $3, $5, $10, $20
 
@@ -267,9 +269,17 @@ function WalletContent() {
     ))}
   </div>
 ) : transactions.length === 0 ? (
-  <p className="text-slate-500 text-center py-6">
-    No transactions yet. Top up to get started.
-  </p>
+  <EmptyState
+    icon={Receipt}
+    title="No transactions yet"
+    description="Your deposits, refunds, and rental charges will appear here. Top up your wallet to get started."
+    actionLabel="Top Up Wallet"
+    onAction={() => {
+      // Scroll to the top-up section
+      document.getElementById('customAmount')?.focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }}
+  />
 ) : (
             <div className="space-y-2">
               {transactions.map((tx) => {
