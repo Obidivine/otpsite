@@ -1,5 +1,16 @@
 node_modules/
 .env
 *.log
-*.json
 check-env.js
+!frontend/package.json
+!frontend/package-lock.json
+# Test payload files (kept out of repo)
+signup.json
+login.json
+rent.json
+rent-uk.json
+topup.json
+checkout.json
+flw-webhook.json
+ratelimit-test.json
+test-*.json
