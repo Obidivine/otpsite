@@ -61,17 +61,43 @@ app.use(cors({
 }));
 
 // Belt-and-suspenders CORS headers (in case ngrok strips them)
+// ==========================================
+// CORS — MANUAL (bypasses any middleware interference)
+// ==========================================
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && /\.vercel\.app$/.test(origin)) {
+  
+  // Echo back the origin if it's allowed
+  const isAllowed =
+    !origin ||
+    origin.startsWith('http://localhost') ||
+    origin.startsWith('http://127.0.0.1') ||
+    /\.vercel\.app$/.test(origin) ||
+    origin.endsWith('.ngrok-free.app') ||
+    origin.endsWith('.ngrok-free.dev');
+
+  if (isAllowed && origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,verif-hash,upstash-signature');
+    res.setHeader('Vary', 'Origin');
+  } else if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
+
+  // Handle preflight
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      req.headers['access-control-request-headers'] || 'Content-Type,Authorization,verif-hash,upstash-signature'
+    );
+    res.setHeader(
+      'Access-Control-Expose-Headers',
+      'X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset'
+    );
+    return res.status(204).end();
   }
+
   next();
 });
 
