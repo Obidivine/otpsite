@@ -15,14 +15,15 @@ const SERVICE_MAP = {
 };
 
 // Map our country codes to SMSPool's country IDs
-const COUNTRY_MAP = {
-  US: 1,
-  UK: 16,
-  CA: 2,
-  NL: 15,
-  DE: 7,
-  // Full list: https://smspool.net/countries
+  const COUNTRY_MAP = {
+  US: 1,    // United States
+  UK: 2,    // United Kingdom
+  NL: 3,    // Netherlands
+  DE: 24,   // Germany
+  // CA (Canada) not currently available on SMSPool
+  // FR: 23, SE: 6, ES: 55, IT: 79, PL: 21, IE: 32, etc.
 };
+
 
 class SMSPoolProvider extends ProviderInterface {
   constructor() {

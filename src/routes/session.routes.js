@@ -42,107 +42,95 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
     // STEP 1: Hold funds (atomic)
     holdData = await billingService.holdRentalFunds(userId, costCents);
 
-    // STEP 2: Provision number based on provider type
+    // ==========================================
+    // STEP 2-4: All operations below are wrapped
+    // so any failure triggers an auto-refund.
+    // ==========================================
     let sessionData;
+    let purchased = null;      // For polling providers — tracked so we can cancel on failure
 
-    if (provider === 'twilio') {
-      // ----- TWILIO FLOW (subaccount + number) -----
-      let subaccount, provisioned;
-      try {
-        subaccount = await telecomService.createSubaccount(userId);
-        provisioned = await telecomService.provisionPhoneNumber(
+    try {
+      if (provider === 'twilio') {
+        // ----- TWILIO FLOW -----
+        const subaccount = await telecomService.createSubaccount(userId);
+        const provisioned = await telecomService.provisionPhoneNumber(
           subaccount.sid,
           subaccount.authToken,
           country
         );
-      } catch (telecomError) {
-        console.error('[TELECOM PROVISIONING FAILED] Executing refund:', telecomError.message);
-        await billingService.compensateFailedRental(
-          userId,
-          holdData.holdReference,
-          costCents,
-          telecomError.message
-        );
-        return res.status(502).json({
-          error: 'Failed to provision phone number. Your funds have been refunded.',
-          details: telecomError.message,
-        });
-      }
 
-      sessionData = {
-        id: `sess_${Date.now()}`,
-        userId,
-        service,
-        costCents,
-        provider: 'twilio',
-        providerOrderId: null,
-        subaccountSid: subaccount.sid,
-        subaccountToken: subaccount.authToken,
-        numberSid: provisioned.numberSid,
-        phoneNumber: provisioned.phoneNumber,
-        status: 'ACTIVE',
-        expiresAt: Date.now() + 15 * 60 * 1000,
-      };
-    } else {
-      // ----- POLLING FLOW (SMSPool, 5SIM, etc.) -----
-      let purchased;
-      try {
+        sessionData = {
+          id: `sess_${Date.now()}`,
+          userId,
+          service,
+          costCents,
+          provider: 'twilio',
+          providerOrderId: null,
+          subaccountSid: subaccount.sid,
+          subaccountToken: subaccount.authToken,
+          numberSid: provisioned.numberSid,
+          phoneNumber: provisioned.phoneNumber,
+          status: 'ACTIVE',
+          expiresAt: Date.now() + 15 * 60 * 1000,
+        };
+      } else {
+        // ----- POLLING FLOW (SMSPool, 5SIM, etc.) -----
         purchased = await telecomService.buyNumber(country, service, provider);
-      } catch (providerError) {
-        console.error('[PROVIDER PURCHASE FAILED] Executing refund:', providerError.message);
-        await billingService.compensateFailedRental(
+
+        sessionData = {
+          id: `sess_${Date.now()}`,
           userId,
-          holdData.holdReference,
+          service,
           costCents,
-          providerError.message
-        );
-        return res.status(502).json({
-          error: 'Failed to provision phone number. Your funds have been refunded.',
-          details: providerError.message,
-        });
+          provider,
+          providerOrderId: purchased.orderId,
+          subaccountSid: null,
+          subaccountToken: null,
+          numberSid: null,
+          phoneNumber: purchased.phoneNumber,
+          status: 'ACTIVE',
+          expiresAt: Date.now() + 15 * 60 * 1000,
+        };
       }
 
-      sessionData = {
-        id: `sess_${Date.now()}`,
+      // STEP 3: Persist session
+      await sessionStore.createSession(sessionData);
+
+      // STEP 4: Schedule QStash expiry check
+      try {
+        await schedulerService.scheduleSessionExpiry(sessionData.id, sessionData.phoneNumber);
+      } catch (schedulerError) {
+        console.error('[SCHEDULER FAILED] Passive polling will handle expiry:', schedulerError.message);
+      }
+
+    } catch (provisioningError) {
+      console.error('[PROVISIONING FAILED] Executing full compensation:', provisioningError.message);
+
+      // If we already bought a number from SMSPool, cancel it first
+      if (purchased?.orderId) {
+        try {
+          await telecomService.cancelOrder(purchased.orderId, provider);
+          console.log('[PROVIDER CANCEL] Cancelled order', purchased.orderId);
+        } catch (cancelErr) {
+          console.error('[PROVIDER CANCEL FAILED]', cancelErr.message);
+        }
+      }
+
+      // Refund the user
+      await billingService.compensateFailedRental(
         userId,
-        service,
+        holdData.holdReference,
         costCents,
-        provider,
-        providerOrderId: purchased.orderId,
-        subaccountSid: null,
-        subaccountToken: null,
-        numberSid: null,
-        phoneNumber: purchased.phoneNumber,
-        status: 'ACTIVE',
-        expiresAt: Date.now() + 15 * 60 * 1000,
-      };
-    }
+        provisioningError.message
+      );
 
-    // STEP 3: Persist session
-    await sessionStore.createSession(sessionData);
-
-    // STEP 4: Schedule QStash expiry check (non-blocking)
-    try {
-      await schedulerService.scheduleSessionExpiry(sessionData.id, sessionData.phoneNumber);
-    } catch (schedulerError) {
-      console.error('[SCHEDULER FAILED] Passive polling will handle expiry:', schedulerError.message);
+      return res.status(502).json({
+        error: 'Failed to provision phone number. Your funds have been refunded.',
+        details: provisioningError.message,
+      });
     }
 
     return res.status(200).json({
-      success: true,
-      sessionId: sessionData.id,
-      phoneNumber: sessionData.phoneNumber,
-      service: sessionData.service,
-      costCents: sessionData.costCents,
-      expiresAt: sessionData.expiresAt,
-    });
-
-  } catch (error) {
-    console.error('[RENTAL ROUTE ERROR]:', error.message);
-    const statusCode = error.statusCode || 500;
-    return res.status(statusCode).json({ error: error.message });
-  }
-});
 
 // ==========================================
 // GET /api/v1/sessions (PROTECTED)
