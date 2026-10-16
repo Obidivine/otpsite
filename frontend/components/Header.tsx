@@ -51,18 +51,17 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link
+        <Link
   href="/dashboard/wallet"
   className="text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1.5"
-	>
-  Balance:{' '}
+>
+  <span className="hidden sm:inline">Balance:</span>{' '}
   {balanceData ? (
     <span className="text-slate-900">{balanceUSD}</span>
   ) : (
     <Skeleton className="h-4 w-12 inline-block" />
   )}
 </Link>
-
             <span className="hidden sm:inline text-sm text-slate-500">
               {user?.email}
             </span>
