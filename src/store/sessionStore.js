@@ -6,10 +6,11 @@ class SessionStore {
     const query = `
       INSERT INTO public.sessions (
         id, user_id, service, cost_cents,
+        provider, provider_order_id,
         subaccount_sid, subaccount_token, number_sid, phone_number,
         status, expires_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, to_timestamp($10 / 1000.0))
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, to_timestamp($12 / 1000.0))
       RETURNING *;
     `;
     const values = [
@@ -17,9 +18,11 @@ class SessionStore {
       data.userId || null,
       data.service,
       data.costCents,
-      data.subaccountSid,
-      data.subaccountToken,
-      data.numberSid,
+      data.provider || 'twilio',
+      data.providerOrderId || null,
+      data.subaccountSid || null,
+      data.subaccountToken || null,
+      data.numberSid || null,
       data.phoneNumber,
       data.status,
       data.expiresAt
@@ -46,6 +49,8 @@ class SessionStore {
       userId: row.user_id,
       service: row.service,
       costCents: parseInt(row.cost_cents, 10),
+      provider: row.provider,
+      providerOrderId: row.provider_order_id,
       subaccountSid: row.subaccount_sid,
       subaccountToken: row.subaccount_token,
       numberSid: row.number_sid,
@@ -62,30 +67,31 @@ class SessionStore {
     };
   }
 
-async getUserSessions(userId) {
-  const query = `
-    SELECT 
-      id, user_id, service, cost_cents, phone_number, status, 
-      expires_at, refunded_at, created_at
-    FROM public.sessions
-    WHERE user_id = $1
-    ORDER BY created_at DESC
-    LIMIT 50;
-  `;
-  const { rows } = await db.query(query, [userId]);
-  
-  return rows.map((row) => ({
-    id: row.id,
-    userId: row.user_id,
-    service: row.service,
-    costCents: parseInt(row.cost_cents, 10),
-    phoneNumber: row.phone_number,
-    status: row.status,
-    expiresAt: new Date(row.expires_at).getTime(),
-    refundedAt: row.refunded_at,
-    createdAt: row.created_at,
-  }));
-}
+  async getUserSessions(userId) {
+    const query = `
+      SELECT
+        id, user_id, service, cost_cents, phone_number, status,
+        provider, expires_at, refunded_at, created_at
+      FROM public.sessions
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 50;
+    `;
+    const { rows } = await db.query(query, [userId]);
+
+    return rows.map((row) => ({
+      id: row.id,
+      userId: row.user_id,
+      service: row.service,
+      costCents: parseInt(row.cost_cents, 10),
+      phoneNumber: row.phone_number,
+      status: row.status,
+      provider: row.provider,
+      expiresAt: new Date(row.expires_at).getTime(),
+      refundedAt: row.refunded_at,
+      createdAt: row.created_at,
+    }));
+  }
 
   async updateSessionStatus(phoneNumber, status) {
     const query = `

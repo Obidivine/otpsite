@@ -1,19 +1,18 @@
 // src/services/telecom.service.js
 const twilioProvider = require('./providers/twilio.provider');
+const smspoolProvider = require('./providers/smspool.provider');
 
 // ==========================================
 // PROVIDER REGISTRY
 // ==========================================
-// To add 5SIM, SMS-Activate, etc. later:
-//   1. Create src/services/providers/fivesim.provider.js implementing ProviderInterface
-//   2. Add it to the registry below
-//   3. Pick it via PROVIDER env var or per-request param
-// ==========================================
 const providers = {
-  twilio: twilioProvider
-  // fivesim: fivesimProvider,   <- add later
-  // smsactivate: smsActivateProvider,
+  twilio: twilioProvider,
+  smspool: smspoolProvider,
+  // fivesim: fivesimProvider,  <- add later
 };
+
+// Which provider is used by default for new rentals
+const DEFAULT_PROVIDER = process.env.DEFAULT_PROVIDER || 'smspool';
 
 function getProvider(name) {
   const provider = providers[name];
@@ -26,21 +25,43 @@ function getProvider(name) {
 // ==========================================
 // PUBLIC SERVICE API (provider-agnostic)
 // ==========================================
-async function createSubaccount(userId, providerName = 'twilio') {
+
+// --- Twilio-style (webhook + subaccount) ---
+async function createSubaccount(userId, providerName = DEFAULT_PROVIDER) {
   return getProvider(providerName).createSubaccount(userId);
 }
 
-async function provisionPhoneNumber(subaccountSid, subaccountAuthToken, countryCode, providerName = 'twilio') {
+async function provisionPhoneNumber(subaccountSid, subaccountAuthToken, countryCode, providerName = DEFAULT_PROVIDER) {
   return getProvider(providerName).provisionPhoneNumber(subaccountSid, subaccountAuthToken, countryCode);
 }
 
-async function releasePhoneNumber(subaccountSid, subaccountAuthToken, numberSid, providerName = 'twilio') {
+async function releasePhoneNumber(subaccountSid, subaccountAuthToken, numberSid, providerName = DEFAULT_PROVIDER) {
   return getProvider(providerName).releasePhoneNumber(subaccountSid, subaccountAuthToken, numberSid);
 }
 
+// --- Polling-style (SMSPool, 5SIM, etc.) ---
+async function buyNumber(countryCode, serviceId, providerName = DEFAULT_PROVIDER) {
+  return getProvider(providerName).buyNumber(countryCode, serviceId);
+}
+
+async function pollForOtp(providerOrderId, providerName = DEFAULT_PROVIDER) {
+  return getProvider(providerName).pollForOtp(providerOrderId);
+}
+
+async function cancelOrder(providerOrderId, providerName = DEFAULT_PROVIDER) {
+  return getProvider(providerName).cancelOrder(providerOrderId);
+}
+
 module.exports = {
+  // Twilio-style
   createSubaccount,
   provisionPhoneNumber,
   releasePhoneNumber,
-  getProvider
+  // Polling-style
+  buyNumber,
+  pollForOtp,
+  cancelOrder,
+  // Utility
+  getProvider,
+  DEFAULT_PROVIDER,
 };

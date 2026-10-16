@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS public.sessions (
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
     service VARCHAR(64) NOT NULL,
     cost_cents BIGINT NOT NULL DEFAULT 100,
+	provider VARCHAR(32) DEFAULT 'twilio',
+	provider_order_id VARCHAR(255),
     subaccount_sid VARCHAR(255) NOT NULL,
     subaccount_token VARCHAR(255) NOT NULL,
     number_sid VARCHAR(255) NOT NULL,

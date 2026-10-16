@@ -14,3 +14,4 @@ checkout.json
 flw-webhook.json
 ratelimit-test.json
 test-*.json
+smspool-test.json
