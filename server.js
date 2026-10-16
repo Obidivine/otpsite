@@ -56,18 +56,16 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'verif-hash', 'upstash-signature'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'verif-hash', 'upstash-signature', 'ngrok-skip-browser-warning'],
   exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
 }));
 
-// Belt-and-suspenders CORS headers (in case ngrok strips them)
 // ==========================================
-// CORS — MANUAL (bypasses any middleware interference)
+// CORS — MANUAL (no cors() package)
 // ==========================================
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
-  // Echo back the origin if it's allowed
+
   const isAllowed =
     !origin ||
     origin.startsWith('http://localhost') ||
@@ -84,13 +82,14 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
-  // Handle preflight
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    // Echo back whatever the browser requests — no hardcoded list
+    const requestedHeaders = req.headers['access-control-request-headers'];
     res.setHeader(
       'Access-Control-Allow-Headers',
-      req.headers['access-control-request-headers'] || 'Content-Type,Authorization,verif-hash,upstash-signature'
+      requestedHeaders || 'Content-Type,Authorization,verif-hash,upstash-signature,ngrok-skip-browser-warning'
     );
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
     res.setHeader(
       'Access-Control-Expose-Headers',
       'X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset'
