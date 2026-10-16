@@ -15,9 +15,33 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OTP Reseller — Foreign phone numbers for OTP verification",
+  title: {
+    default: 'OTP Reseller — Foreign phone numbers for OTP verification',
+    template: '%s · OTP Reseller',
+  },
   description:
-    "Get instant access to US, UK, and European phone numbers for verifying WhatsApp, Telegram, Instagram, and TikTok accounts. No SIM card needed.",
+    'Get instant access to US, UK, and European phone numbers for verifying WhatsApp, Telegram, Instagram, and TikTok accounts. No SIM card needed.',
+  keywords: [
+    'OTP',
+    'phone verification',
+    'virtual numbers',
+    'WhatsApp verification',
+    'Telegram verification',
+    'foreign number',
+  ],
+  openGraph: {
+    type: 'website',
+    title: 'OTP Reseller — Foreign phone numbers for OTP verification',
+    description:
+      'Verify WhatsApp, Telegram, Instagram, and TikTok with US, UK, or European phone numbers. Instant delivery.',
+    siteName: 'OTP Reseller',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'OTP Reseller — Foreign phone numbers for OTP verification',
+    description:
+      'Verify WhatsApp, Telegram, Instagram, and TikTok with foreign phone numbers.',
+  },
 };
 
 export default function RootLayout({
