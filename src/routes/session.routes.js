@@ -20,7 +20,6 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
     return res.status(400).json({ error: 'service is required.' });
   }
 
-  // 1. Dynamic catalog price lookup
   let costCents;
   try {
     costCents = await catalogService.getPriceForService(country, service);
@@ -39,19 +38,13 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
   let holdData = null;
 
   try {
-    // STEP 1: Hold funds (atomic)
     holdData = await billingService.holdRentalFunds(userId, costCents);
 
-    // ==========================================
-    // STEP 2-4: All operations below are wrapped
-    // so any failure triggers an auto-refund.
-    // ==========================================
     let sessionData;
-    let purchased = null;      // For polling providers — tracked so we can cancel on failure
+    let purchased = null;
 
     try {
       if (provider === 'twilio') {
-        // ----- TWILIO FLOW -----
         const subaccount = await telecomService.createSubaccount(userId);
         const provisioned = await telecomService.provisionPhoneNumber(
           subaccount.sid,
@@ -74,7 +67,6 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
           expiresAt: Date.now() + 15 * 60 * 1000,
         };
       } else {
-        // ----- POLLING FLOW (SMSPool, 5SIM, etc.) -----
         purchased = await telecomService.buyNumber(country, service, provider);
 
         sessionData = {
@@ -93,10 +85,8 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
         };
       }
 
-      // STEP 3: Persist session
       await sessionStore.createSession(sessionData);
 
-      // STEP 4: Schedule QStash expiry check
       try {
         await schedulerService.scheduleSessionExpiry(sessionData.id, sessionData.phoneNumber);
       } catch (schedulerError) {
@@ -106,7 +96,6 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
     } catch (provisioningError) {
       console.error('[PROVISIONING FAILED] Executing full compensation:', provisioningError.message);
 
-      // If we already bought a number from SMSPool, cancel it first
       if (purchased?.orderId) {
         try {
           await telecomService.cancelOrder(purchased.orderId, provider);
@@ -116,7 +105,6 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
         }
       }
 
-      // Refund the user
       await billingService.compensateFailedRental(
         userId,
         holdData.holdReference,
@@ -131,6 +119,20 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
     }
 
     return res.status(200).json({
+      success: true,
+      sessionId: sessionData.id,
+      phoneNumber: sessionData.phoneNumber,
+      service: sessionData.service,
+      costCents: sessionData.costCents,
+      expiresAt: sessionData.expiresAt,
+    });
+
+  } catch (error) {
+    console.error('[RENTAL ROUTE ERROR]:', error.message);
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({ error: error.message });
+  }
+});
 
 // ==========================================
 // GET /api/v1/sessions (PROTECTED)
@@ -160,12 +162,10 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
     }
 
-    // If already final state, return as-is
     if (session.status === 'EXPIRED' || session.status === 'COMPLETED') {
       return res.status(200).json(session);
     }
 
-    // For polling providers: if ACTIVE and no OTP yet, poll the provider now
     if (
       session.status === 'ACTIVE' &&
       session.provider !== 'twilio' &&
@@ -200,15 +200,12 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
         }
       } catch (pollError) {
         console.error('[POLL ERROR]:', pollError.message);
-        // Fall through — don't fail the whole request on a transient poll error
       }
     }
 
-    // If session is past expiry
     if (Date.now() > session.expiresAt && session.status === 'ACTIVE') {
       const refunded = await billingService.refundExpiredSession(session.id, req.user.id);
 
-      // For polling providers: cancel the order with the provider too
       if (session.provider !== 'twilio' && session.providerOrderId) {
         try {
           await telecomService.cancelOrder(session.providerOrderId, session.provider);
