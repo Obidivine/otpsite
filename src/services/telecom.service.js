@@ -1,18 +1,15 @@
 // src/services/telecom.service.js
-const twilioProvider = require('./providers/twilio.provider');
 const smspoolProvider = require('./providers/smspool.provider');
 
 // ==========================================
 // PROVIDER REGISTRY
 // ==========================================
 const providers = {
-  twilio: twilioProvider,
   smspool: smspoolProvider,
-  // fivesim: fivesimProvider,  <- add later
 };
 
-// Which provider is used by default for new rentals
-const DEFAULT_PROVIDER = process.env.DEFAULT_PROVIDER || 'smspool';
+// Locked to SMSPool
+const DEFAULT_PROVIDER = 'smspool';
 
 function getProvider(name) {
   const provider = providers[name];
@@ -23,23 +20,23 @@ function getProvider(name) {
 }
 
 // ==========================================
-// PUBLIC SERVICE API (provider-agnostic)
+// PUBLIC SERVICE API
 // ==========================================
 
-// --- Twilio-style (webhook + subaccount) ---
-async function createSubaccount(userId, providerName = DEFAULT_PROVIDER) {
-  return getProvider(providerName).createSubaccount(userId);
+// These Twilio methods now throw an error if called, but we'll remove them from the routes anyway
+async function createSubaccount(userId) {
+  throw new Error('Twilio has been removed. Use buyNumber() instead.');
 }
 
-async function provisionPhoneNumber(subaccountSid, subaccountAuthToken, countryCode, providerName = DEFAULT_PROVIDER) {
-  return getProvider(providerName).provisionPhoneNumber(subaccountSid, subaccountAuthToken, countryCode);
+async function provisionPhoneNumber(subaccountSid, subaccountAuthToken, countryCode) {
+  throw new Error('Twilio has been removed. Use buyNumber() instead.');
 }
 
-async function releasePhoneNumber(subaccountSid, subaccountAuthToken, numberSid, providerName = DEFAULT_PROVIDER) {
-  return getProvider(providerName).releasePhoneNumber(subaccountSid, subaccountAuthToken, numberSid);
+async function releasePhoneNumber(subaccountSid, subaccountAuthToken, numberSid) {
+  throw new Error('Twilio has been removed. Use cancelOrder() instead.');
 }
 
-// --- Polling-style (SMSPool, 5SIM, etc.) ---
+// --- Polling-style (SMSPool) ---
 async function buyNumber(countryCode, serviceId, providerName = DEFAULT_PROVIDER) {
   return getProvider(providerName).buyNumber(countryCode, serviceId);
 }
@@ -53,15 +50,12 @@ async function cancelOrder(providerOrderId, providerName = DEFAULT_PROVIDER) {
 }
 
 module.exports = {
-  // Twilio-style
   createSubaccount,
   provisionPhoneNumber,
   releasePhoneNumber,
-  // Polling-style
   buyNumber,
   pollForOtp,
   cancelOrder,
-  // Utility
   getProvider,
   DEFAULT_PROVIDER,
 };

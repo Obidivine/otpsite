@@ -29,12 +29,9 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
   }
 
   if (!costCents) {
-    return res.status(404).json({
-      error: `No available inventory for ${service} in ${country}.`,
-    });
+    return res.status(404).json({ error: `No available inventory for ${service} in ${country}.` });
   }
 
-  const provider = telecomService.DEFAULT_PROVIDER;
   let holdData = null;
 
   try {
@@ -44,53 +41,30 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
     let purchased = null;
 
     try {
-      if (provider === 'twilio') {
-        const subaccount = await telecomService.createSubaccount(userId);
-        const provisioned = await telecomService.provisionPhoneNumber(
-          subaccount.sid,
-          subaccount.authToken,
-          country
-        );
+      // SMSPool Flow Only
+      purchased = await telecomService.buyNumber(country, service, 'smspool');
 
-        sessionData = {
-          id: `sess_${Date.now()}`,
-          userId,
-          service,
-          costCents,
-          provider: 'twilio',
-          providerOrderId: null,
-          subaccountSid: subaccount.sid,
-          subaccountToken: subaccount.authToken,
-          numberSid: provisioned.numberSid,
-          phoneNumber: provisioned.phoneNumber,
-          status: 'ACTIVE',
-          expiresAt: Date.now() + 15 * 60 * 1000,
-        };
-      } else {
-        purchased = await telecomService.buyNumber(country, service, provider);
-
-        sessionData = {
-          id: `sess_${Date.now()}`,
-          userId,
-          service,
-          costCents,
-          provider,
-          providerOrderId: purchased.orderId,
-          subaccountSid: null,
-          subaccountToken: null,
-          numberSid: null,
-          phoneNumber: purchased.phoneNumber,
-          status: 'ACTIVE',
-          expiresAt: Date.now() + 15 * 60 * 1000,
-        };
-      }
+      sessionData = {
+        id: `sess_${Date.now()}`,
+        userId,
+        service,
+        costCents,
+        provider: 'smspool',
+        providerOrderId: purchased.orderId,
+        subaccountSid: null,
+        subaccountToken: null,
+        numberSid: null,
+        phoneNumber: purchased.phoneNumber,
+        status: 'ACTIVE',
+        expiresAt: Date.now() + 15 * 60 * 1000,
+      };
 
       await sessionStore.createSession(sessionData);
 
       try {
         await schedulerService.scheduleSessionExpiry(sessionData.id, sessionData.phoneNumber);
       } catch (schedulerError) {
-        console.error('[SCHEDULER FAILED] Passive polling will handle expiry:', schedulerError.message);
+        console.error('[SCHEDULER FAILED]:', schedulerError.message);
       }
 
     } catch (provisioningError) {
@@ -98,8 +72,7 @@ router.post('/rent', authenticateToken, rentLimiter, async (req, res) => {
 
       if (purchased?.orderId) {
         try {
-          await telecomService.cancelOrder(purchased.orderId, provider);
-          console.log('[PROVIDER CANCEL] Cancelled order', purchased.orderId);
+          await telecomService.cancelOrder(purchased.orderId, 'smspool');
         } catch (cancelErr) {
           console.error('[PROVIDER CANCEL FAILED]', cancelErr.message);
         }
@@ -154,10 +127,7 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
   try {
     const session = await sessionStore.getSessionByPhone(req.params.phoneNumber);
 
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found.' });
-    }
-
+    if (!session) return res.status(404).json({ error: 'Session not found.' });
     if (String(session.userId) !== String(req.user.id)) {
       return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
     }
@@ -166,17 +136,9 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
       return res.status(200).json(session);
     }
 
-    if (
-      session.status === 'ACTIVE' &&
-      session.provider !== 'twilio' &&
-      session.providerOrderId &&
-      !session.otp
-    ) {
+    if (session.status === 'ACTIVE' && session.providerOrderId && !session.otp) {
       try {
-        const pollResult = await telecomService.pollForOtp(
-          session.providerOrderId,
-          session.provider
-        );
+        const pollResult = await telecomService.pollForOtp(session.providerOrderId, session.provider);
 
         if (pollResult?.code) {
           await sessionStore.saveOtpAndCompleteSession(session.phoneNumber, {
@@ -195,7 +157,6 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
         }
 
         if (pollResult?.expired) {
-          console.log('[PROVIDER EXPIRED] Cancelling order', session.providerOrderId);
           await telecomService.cancelOrder(session.providerOrderId, session.provider);
         }
       } catch (pollError) {
@@ -206,7 +167,7 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
     if (Date.now() > session.expiresAt && session.status === 'ACTIVE') {
       const refunded = await billingService.refundExpiredSession(session.id, req.user.id);
 
-      if (session.provider !== 'twilio' && session.providerOrderId) {
+      if (session.providerOrderId) {
         try {
           await telecomService.cancelOrder(session.providerOrderId, session.provider);
         } catch (cancelErr) {
@@ -215,10 +176,7 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
       }
 
       session.status = 'EXPIRED';
-      return res.status(410).json({
-        error: 'Session has expired.',
-        refundIssued: refunded,
-      });
+      return res.status(410).json({ error: 'Session has expired.', refundIssued: refunded });
     }
 
     return res.status(200).json(session);
@@ -235,26 +193,16 @@ router.post('/:phoneNumber/release', authenticateToken, async (req, res) => {
   try {
     const session = await sessionStore.getSessionByPhone(req.params.phoneNumber);
 
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found.' });
-    }
-
+    if (!session) return res.status(404).json({ error: 'Session not found.' });
     if (String(session.userId) !== String(req.user.id)) {
       return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
     }
 
-    if (session.provider === 'twilio') {
-      await telecomService.releasePhoneNumber(
-        session.subaccountSid,
-        session.subaccountToken,
-        session.numberSid
-      );
-    } else if (session.providerOrderId) {
+    if (session.providerOrderId) {
       await telecomService.cancelOrder(session.providerOrderId, session.provider);
     }
 
     await sessionStore.deleteSession(req.params.phoneNumber);
-
     return res.status(200).json({ success: true, message: 'Number released.' });
   } catch (error) {
     console.error('[RELEASE ERROR]:', error.message);

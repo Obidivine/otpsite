@@ -5,7 +5,6 @@ const cors = require('cors');
 
 const authRoutes = require('./src/routes/auth.routes');
 const sessionRoutes = require('./src/routes/session.routes');
-const webhookRoutes = require('./src/routes/webhook.routes');
 const catalogRoutes = require('./src/routes/catalog.routes');
 const paymentRoutes = require('./src/routes/payment.routes');
 
@@ -111,7 +110,6 @@ app.use(express.urlencoded({ extended: true }));
 // ==========================================
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/sessions', sessionRoutes);
-app.use('/api/v1/webhooks', webhookRoutes);
 app.use('/api/v1/catalog', catalogRoutes);
 app.use('/api/v1', paymentRoutes);
 
