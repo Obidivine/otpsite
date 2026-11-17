@@ -31,17 +31,20 @@ class SessionStore {
     return rows[0];
   }
 
-  async getSessionByPhone(phoneNumber) {
+    async getSessionByPhone(phoneNumber) {
+    // This query ignores the '+' sign and spaces, so it always finds the match
     const query = `
       SELECT s.*, o.code AS otp_code, o.sender AS otp_sender, o.raw_text AS otp_raw_text, o.received_at AS otp_received_at
       FROM public.sessions s
       LEFT JOIN public.otps o ON s.id = o.session_id
-      WHERE s.phone_number = $1
+      WHERE REPLACE(s.phone_number, '+', '') = REPLACE($1, '+', '')
       ORDER BY o.received_at DESC NULLS LAST
       LIMIT 1;
     `;
     const { rows } = await db.query(query, [phoneNumber]);
     if (rows.length === 0) return null;
+    
+    // ... (leave the rest of the mapping exactly the same)
 
     const row = rows[0];
     return {
