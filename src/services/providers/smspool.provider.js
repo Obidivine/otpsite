@@ -4,22 +4,21 @@ const ProviderInterface = require('./provider.interface');
 const API_KEY = process.env.SMSPOOL_API_KEY;
 const BASE_URL = process.env.SMSPOOL_BASE_URL || 'https://api.smspool.net';
 
-// Map our internal service IDs to SMSPool's service IDs
 const SERVICE_MAP = {
-  whatsapp: 1,        // SMSPool uses numeric service IDs
-  telegram: 2,
-  instagram: 3,
-  tiktok: 4,
-  signal: 5,
-  // Add more as SMSPool adds them: https://smspool.net/services
+  whatsapp: 1012,
+  telegram: 907,
+  instagram: 457,
+  tiktok: 924,
+  signal: 829,
+   // Add more as SMSPool adds them: https://smspool.net/services
 };
-
+ 
 // Map our country codes to SMSPool's country IDs
   const COUNTRY_MAP = {
   US: 1,    // United States
-  UK: 2,    // United Kingdom
-  NL: 3,    // Netherlands
-  DE: 24,   // Germany
+  UK: 16,    // United Kingdom
+  NL: 48,    // Netherlands
+  DE: 43,   // Germany
   // CA (Canada) not currently available on SMSPool
   // FR: 23, SE: 6, ES: 55, IT: 79, PL: 21, IE: 32, etc.
 };
