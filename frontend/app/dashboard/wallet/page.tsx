@@ -12,6 +12,7 @@ import {
   useTransactions,
   useTopupInit,
   useTopupCheckout,
+  usePaystackInit,
 } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,7 @@ export default function WalletPage() {
 }
 
 function WalletContent() {
+	const paystackMutation = usePaystackInit();
   const searchParams = useSearchParams();
   const returnStatus = searchParams?.get('status');
 
@@ -120,30 +122,26 @@ function WalletContent() {
     setDialogOpen(true);
   }
 
-  async function handleConfirmTopup() {
-    setError(null);
-    setDialogOpen(false);
+  // Update your handleConfirmTopup function to accept a provider:
+async function handleTopup(provider: 'flutterwave' | 'paystack') {
+  setError(null);
+  setDialogOpen(false);
 
-    try {
-      // Step 1: Create the payment intent
+  try {
+    if (provider === 'flutterwave') {
       const initResult = await initMutation.mutateAsync({ amountCents });
-
-      // Step 2: Get the Flutterwave checkout URL
-      const checkoutResult = await checkoutMutation.mutateAsync({
-        txRef: initResult.txRef,
-      });
-
-      // Step 3: Redirect the user to Flutterwave
+      const checkoutResult = await checkoutMutation.mutateAsync({ txRef: initResult.txRef });
       window.location.href = checkoutResult.checkoutUrl;
-        } catch (err: any) {
-      const message =
-        err.response?.data?.error ||
-        err.response?.data?.details ||
-        err.message ||
-        'Failed to start top-up. Please try again.';
-      toast.error(message);
+    } else {
+      // Paystack Flow
+      const result = await paystackMutation.mutateAsync({ amountCents });
+      window.location.href = result.authorization_url;
     }
+  } catch (err: any) {
+    const message = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to start top-up.';
+    toast.error(message);
   }
+}
 
   const amountUSD = `$${(amountCents / 100).toFixed(2)}`;
   const amountNGN = `₦${((amountCents / 100) * 1500).toLocaleString()}`;
@@ -339,18 +337,29 @@ function WalletContent() {
             </p>
           </div>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDialogOpen(false)}
-              disabled={isProcessing}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmTopup} disabled={isProcessing}>
-              {isProcessing ? 'Redirecting...' : 'Pay with Flutterwave'}
-            </Button>
-          </DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+  <Button
+    variant="outline"
+    onClick={() => setDialogOpen(false)}
+    disabled={isProcessing}
+  >
+    Cancel
+  </Button>
+  <Button 
+    onClick={() => handleTopup('flutterwave')} 
+    disabled={isProcessing}
+    className="bg-orange-600 hover:bg-orange-700 text-white" // Flutterwave brand color
+  >
+    {isProcessing ? 'Redirecting...' : 'Pay with Flutterwave'}
+  </Button>
+  <Button 
+    onClick={() => handleTopup('paystack')} 
+    disabled={isProcessing}
+    className="bg-blue-600 hover:bg-blue-700 text-white" // Paystack brand color
+  >
+    {isProcessing ? 'Redirecting...' : 'Pay with Paystack'}
+  </Button>
+</DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

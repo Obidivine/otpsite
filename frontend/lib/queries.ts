@@ -9,6 +9,7 @@ import type {
   TransactionsResponse,
   TopupInitResponse,
   SessionsListResponse,
+  usePaystackInit,
 } from '@/types/api';
 
 export function useBalance(options?: { enabled?: boolean }) {

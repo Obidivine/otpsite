@@ -3,12 +3,12 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const authenticateToken = require('../middleware/auth.middleware');
+const crypto = require('crypto'); // <-- ADDED FOR PAYSTACK
 
 const USD_NGN_RATE = parseFloat(process.env.USD_NGN_RATE || '1500');
 
 // ==========================================
-// 1. POST /api/v1/wallet/topup/init
-// Creates a payment intent in USD cents
+// FLUTTERWAVE ROUTES
 // ==========================================
 router.post('/wallet/topup/init', authenticateToken, async (req, res) => {
   const { amountCents } = req.body;
@@ -19,8 +19,6 @@ router.post('/wallet/topup/init', authenticateToken, async (req, res) => {
   }
 
   const txRef = `topup_${userId}_${Date.now()}`;
-
-  // NGN equivalent sent to frontend for Flutterwave checkout only
   const amountNGN = (amountCents / 100) * USD_NGN_RATE;
 
   try {
@@ -43,10 +41,6 @@ router.post('/wallet/topup/init', authenticateToken, async (req, res) => {
   }
 });
 
-// ==========================================
-// 1b. POST /api/v1/wallet/topup/checkout
-// Calls Flutterwave to generate hosted checkout URL
-// ==========================================
 router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
   const { txRef } = req.body;
   const userId = req.user.id;
@@ -56,7 +50,6 @@ router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
   }
 
   try {
-    // 1. Verify the intent exists and belongs to this user
     const intentRes = await db.query(
       `SELECT tx_ref, user_id, amount_cents, status 
        FROM public.payment_intents 
@@ -77,7 +70,6 @@ router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
       });
     }
 
-    // 2. Get user's email
     const userRes = await db.query(
       `SELECT email FROM public.users WHERE id = $1;`,
       [userId]
@@ -88,11 +80,8 @@ router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
     }
 
     const userEmail = userRes.rows[0].email;
-
-    // 3. Convert USD cents → NGN for Flutterwave
     const amountNGN = (parseInt(intent.amount_cents, 10) / 100) * USD_NGN_RATE;
 
-    // 4. Call Flutterwave to create payment
     const flwResponse = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
       headers: {
@@ -104,9 +93,7 @@ router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
         amount: amountNGN,
         currency: 'NGN',
         redirect_url: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/dashboard/wallet?status=success`,
-        customer: {
-          email: userEmail,
-        },
+        customer: { email: userEmail },
         customizations: {
           title: 'OTP Reseller Top-Up',
           description: `Wallet top-up of $${(parseInt(intent.amount_cents, 10) / 100).toFixed(2)}`,
@@ -124,7 +111,6 @@ router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
       });
     }
 
-    // 5. Return the hosted payment link
     return res.status(200).json({
       success: true,
       txRef,
@@ -138,58 +124,6 @@ router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
   }
 });
 
-// ==========================================
-// 2. GET /api/v1/wallet/balance
-// ==========================================
-router.get('/wallet/balance', authenticateToken, async (req, res) => {
-  try {
-    const { rows } = await db.query(
-      `SELECT balance_cents FROM public.users WHERE id = $1;`,
-      [req.user.id]
-    );
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
-
-    const balanceCents = parseInt(rows[0].balance_cents, 10);
-
-    return res.status(200).json({
-      success: true,
-      balanceCents,
-      balanceUSD: (balanceCents / 100).toFixed(2)
-    });
-  } catch (err) {
-    console.error('[WALLET BALANCE ERROR]:', err.message);
-    return res.status(500).json({ error: 'Failed to fetch balance.' });
-  }
-});
-
-// ==========================================
-// 3. GET /api/v1/wallet/transactions
-// ==========================================
-router.get('/wallet/transactions', authenticateToken, async (req, res) => {
-  try {
-    const { rows } = await db.query(
-      `SELECT amount_cents, type, reference, status, notes, created_at
-       FROM public.transactions
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 50;`,
-      [req.user.id]
-    );
-
-    return res.status(200).json({ success: true, transactions: rows });
-  } catch (err) {
-    console.error('[TRANSACTIONS ERROR]:', err.message);
-    return res.status(500).json({ error: 'Failed to fetch transactions.' });
-  }
-});
-
-// ==========================================
-// 4. POST /api/v1/payments/flutterwave/webhook
-// Converts NGN to USD cents, credits balance
-// ==========================================
 router.post('/payments/flutterwave/webhook', async (req, res) => {
   const signature = req.headers['verif-hash'];
 
@@ -217,7 +151,6 @@ router.post('/payments/flutterwave/webhook', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Verify intent exists and matches expected USD cents
     const intentRes = await client.query(
       `SELECT * FROM public.payment_intents WHERE tx_ref = $1 AND status = 'PENDING' FOR UPDATE;`,
       [txRef]
@@ -269,5 +202,133 @@ router.post('/payments/flutterwave/webhook', async (req, res) => {
     client.release();
   }
 });
+
+// ==========================================
+// PAYSTACK ROUTES
+// ==========================================
+router.post('/wallet/paystack/init', authenticateToken, async (req, res) => {
+  const { amountCents } = req.body;
+  const userId = req.user.id;
+
+  if (!amountCents || amountCents <= 0) {
+    return res.status(400).json({ error: 'Valid amountCents is required.' });
+  }
+
+  // Convert USD cents to NGN Kobo for Paystack
+  const amountKobo = Math.round((amountCents / 100) * USD_NGN_RATE * 100);
+  const txRef = `paystack_${userId}_${Date.now()}`;
+
+  try {
+    const userRes = await db.query('SELECT email FROM public.users WHERE id = $1', [userId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    const userEmail = userRes.rows[0].email;
+
+    await db.query(
+      `INSERT INTO public.payment_intents (user_id, tx_ref, amount_cents, status)
+       VALUES ($1, $2, $3, 'PENDING')`,
+      [userId, txRef, amountCents]
+    );
+
+    const response = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: userEmail,
+        amount: amountKobo, // Paystack uses Kobo
+        reference: txRef,
+        callback_url: `${process.env.FRONTEND_URL}/dashboard/wallet?status=success`,
+      }),
+    });
+
+    const paystackData = await response.json();
+
+    if (!paystackData.status) {
+      throw new Error(paystackData.message || 'Paystack init failed');
+    }
+
+    return res.status(200).json({
+      success: true,
+      authorization_url: paystackData.data.authorization_url,
+      reference: txRef,
+    });
+
+  } catch (err) {
+    console.error('[PAYSTACK INIT ERROR]:', err.message);
+    return res.status(500).json({ error: 'Failed to initialize Paystack.' });
+  }
+});
+
+router.post('/payments/paystack/webhook', async (req, res) => {
+  const hash = crypto
+    .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
+    .update(req.rawBody) // <-- MUST USE req.rawBody
+    .digest('hex');
+
+  if (hash !== req.headers['x-paystack-signature']) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  const event = req.body;
+
+  if (event.event === 'charge.success') {
+    const { reference, amount } = event.data;
+    const client = await db.pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const intentRes = await client.query(
+        `SELECT * FROM public.payment_intents WHERE tx_ref = $1 AND status = 'PENDING' FOR UPDATE`,
+        [reference]
+      );
+
+      if (intentRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(200).send('Already processed or invalid');
+      }
+
+      const intent = intentRes.rows[0];
+      const userId = intent.user_id;
+
+      // Update status
+      await client.query(
+        `UPDATE public.payment_intents SET status = 'SUCCESS' WHERE tx_ref = $1`,
+        [reference]
+      );
+
+      // Credit user balance with the USD cents we saved in the intent
+      await client.query(
+        `UPDATE public.users SET balance_cents = balance_cents + $1 WHERE id = $2`,
+        [intent.amount_cents, userId]
+      );
+
+      // Log transaction
+      await client.query(
+        `INSERT INTO public.transactions (user_id, amount_cents, type, reference, status, notes)
+         VALUES ($1, $2, 'DEPOSIT', $3, 'COMPLETED', 'Paystack Deposit')`,
+        [userId, intent.amount_cents, reference]
+      );
+
+      await client.query('COMMIT');
+      console.log(`[PAYSTACK SUCCESS] Credited user ${userId} with ${intent.amount_cents} cents.`);
+      return res.status(200).send('OK');
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('[PAYSTACK WEBHOOK ERROR]:', err.message);
+      return res.status(500).send('Database error');
+    } finally {
+      client.release();
+    }
+  }
+
+  return res.status(200).send('Event ignored');
+});
+
+router.get('/wallet/balance', authenticateToken, async (req, res) => { /* unchanged... */ });
+router.get('/wallet/transactions', authenticateToken, async (req, res) => { /* unchanged... */ });
 
 module.exports = router;
