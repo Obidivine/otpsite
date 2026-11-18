@@ -4,25 +4,18 @@ const ProviderInterface = require('./provider.interface');
 const API_KEY = process.env.SMSPOOL_API_KEY;
 const BASE_URL = process.env.SMSPOOL_BASE_URL || 'https://api.smspool.net';
 
+// Our internal service names mapped to SMSPool's numeric service IDs
 const SERVICE_MAP = {
   whatsapp: 1012,
   telegram: 907,
   instagram: 457,
   tiktok: 924,
   signal: 829,
-   // Add more as SMSPool adds them: https://smspool.net/services
-};
- 
-// Map our country codes to SMSPool's country IDs
-  const COUNTRY_MAP = {
-  US: 1,    // United States
-  UK: 16,    // United Kingdom
-  NL: 48,    // Netherlands
-  DE: 43,   // Germany
-  // CA (Canada) not currently available on SMSPool
-  // FR: 23, SE: 6, ES: 55, IT: 79, PL: 21, IE: 32, etc.
+  // Add more as SMSPool adds them: https://smspool.net/services
 };
 
+// Note: The COUNTRY_MAP has been completely removed. 
+// Country IDs are now fetched from your Supabase database via telecom.service.js
 
 class SMSPoolProvider extends ProviderInterface {
   constructor() {
@@ -57,20 +50,18 @@ class SMSPoolProvider extends ProviderInterface {
 
   /**
    * Buy a number. Returns normalized shape.
+   * @param {number} countryId - The SMSPool numeric country ID (e.g., 53 for Mexico)
+   * @param {string} serviceId - Our internal service name (e.g., 'telegram')
    */
-  async buyNumber(countryCode, serviceId) {
-    const country = COUNTRY_MAP[countryCode?.toUpperCase()];
+  async buyNumber(countryId, serviceId) {
     const service = SERVICE_MAP[serviceId?.toLowerCase()];
 
-    if (!country) {
-      throw new Error(`Unsupported country for SMSPool: ${countryCode}`);
-    }
     if (!service) {
       throw new Error(`Unsupported service for SMSPool: ${serviceId}`);
     }
 
     const result = await this._post('/purchase/sms', {
-      country,
+      country: countryId, // We now pass the numeric ID directly from the DB
       service,
       // pool: leave unspecified so SMSPool picks the best available
     });

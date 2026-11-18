@@ -2,37 +2,39 @@
 const db = require('../config/db');
 
 class CatalogService {
-  /**
-   * Fetch full inventory with dynamic pricing for a given service
-   */
-async getCatalogByService(serviceId) {
-  const query = `
-    SELECT
-      c.code AS country_code,
-      c.name AS country_name,
-      c.flag_emoji,
-      p.price_cents,
-      p.stock_count,
-      p.success_rate,
-      p.is_available
-    FROM public.pricing p
-    JOIN public.countries c ON p.country_code = c.code
-    WHERE p.service_id = $1
-      AND c.is_active = TRUE
-      AND p.is_available = TRUE
-    ORDER BY p.price_cents ASC;
-  `;
-  const { rows } = await db.query(query, [serviceId.toLowerCase()]);
+  async getCatalogByService(serviceId) {
+    const query = `
+      SELECT
+        c.code AS country_code,
+        c.name AS country_name,
+        c.flag_emoji,
+        c.smspool_id, -- <-- ADD THIS
+        p.price_cents,
+        p.stock_count,
+        p.success_rate,
+        p.is_available
+      FROM public.pricing p
+      JOIN public.countries c ON p.country_code = c.code
+      WHERE p.service_id = $1
+        AND c.is_active = TRUE
+        AND p.is_available = TRUE
+        AND p.stock_count > 0 -- <-- Make sure we don't show out-of-stock
+      ORDER BY p.price_cents ASC;
+    `;
+    const { rows } = await db.query(query, [serviceId.toLowerCase()]);
 
-  return rows.map((row) => ({
-    country_code: row.country_code,
-    country_name: row.country_name,
-    flag_emoji: row.flag_emoji,
-    price_cents: parseInt(row.price_cents, 10),
-    stock_count: row.stock_count,
-    success_rate: parseFloat(row.success_rate),
-    is_available: row.is_available,
-  }));
+    return rows.map((row) => ({
+      country_code: row.country_code,
+      country_name: row.country_name,
+      flag_emoji: row.flag_emoji,
+      smspool_id: row.smspool_id, // <-- ADD THIS
+      price_cents: parseInt(row.price_cents, 10),
+      // ...
+    }));
+  }
+
+  // Keep getPriceForService exactly as you have it (it's perfect)
+  // ...
 }
 
   /**

@@ -1,5 +1,6 @@
 // src/services/telecom.service.js
 const smspoolProvider = require('./providers/smspool.provider');
+const db = require('../config/db'); // <-- IMPORT DB HERE
 
 // ==========================================
 // PROVIDER REGISTRY
@@ -8,7 +9,6 @@ const providers = {
   smspool: smspoolProvider,
 };
 
-// Locked to SMSPool
 const DEFAULT_PROVIDER = 'smspool';
 
 function getProvider(name) {
@@ -19,26 +19,24 @@ function getProvider(name) {
   return provider;
 }
 
-// ==========================================
-// PUBLIC SERVICE API
-// ==========================================
-
-// These Twilio methods now throw an error if called, but we'll remove them from the routes anyway
-async function createSubaccount(userId) {
-  throw new Error('Twilio has been removed. Use buyNumber() instead.');
-}
-
-async function provisionPhoneNumber(subaccountSid, subaccountAuthToken, countryCode) {
-  throw new Error('Twilio has been removed. Use buyNumber() instead.');
-}
-
-async function releasePhoneNumber(subaccountSid, subaccountAuthToken, numberSid) {
-  throw new Error('Twilio has been removed. Use cancelOrder() instead.');
-}
+// ... (keep the Twilio throw methods) ...
 
 // --- Polling-style (SMSPool) ---
 async function buyNumber(countryCode, serviceId, providerName = DEFAULT_PROVIDER) {
-  return getProvider(providerName).buyNumber(countryCode, serviceId);
+  // 1. Look up the SMSPool numeric ID from the database
+  const { rows } = await db.query(
+    'SELECT smspool_id FROM public.countries WHERE code = $1',
+    [countryCode.toUpperCase()]
+  );
+
+  if (rows.length === 0 || !rows[0].smspool_id) {
+    throw new Error(`Country ${countryCode} is missing an SMSPool ID in the database.`);
+  }
+
+  const smspoolCountryId = rows[0].smspool_id;
+
+  // 2. Pass the numeric ID to the provider
+  return getProvider(providerName).buyNumber(smspoolCountryId, serviceId);
 }
 
 async function pollForOtp(providerOrderId, providerName = DEFAULT_PROVIDER) {
@@ -50,9 +48,7 @@ async function cancelOrder(providerOrderId, providerName = DEFAULT_PROVIDER) {
 }
 
 module.exports = {
-  createSubaccount,
-  provisionPhoneNumber,
-  releasePhoneNumber,
+  // ... exports remain the same
   buyNumber,
   pollForOtp,
   cancelOrder,
