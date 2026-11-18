@@ -8,7 +8,7 @@ class CatalogService {
         c.code AS country_code,
         c.name AS country_name,
         c.flag_emoji,
-        c.smspool_id, -- <-- ADD THIS
+        c.smspool_id,
         p.price_cents,
         p.stock_count,
         p.success_rate,
@@ -18,7 +18,7 @@ class CatalogService {
       WHERE p.service_id = $1
         AND c.is_active = TRUE
         AND p.is_available = TRUE
-        AND p.stock_count > 0 -- <-- Make sure we don't show out-of-stock
+        AND p.stock_count > 0
       ORDER BY p.price_cents ASC;
     `;
     const { rows } = await db.query(query, [serviceId.toLowerCase()]);
@@ -27,15 +27,13 @@ class CatalogService {
       country_code: row.country_code,
       country_name: row.country_name,
       flag_emoji: row.flag_emoji,
-      smspool_id: row.smspool_id, // <-- ADD THIS
+      smspool_id: row.smspool_id,
       price_cents: parseInt(row.price_cents, 10),
-      // ...
+      stock_count: row.stock_count,
+      success_rate: parseFloat(row.success_rate),
+      is_available: row.is_available,
     }));
   }
-
-  // Keep getPriceForService exactly as you have it (it's perfect)
-  // ...
-}
 
   /**
    * Fetch price in USD cents for a specific country + service combo
