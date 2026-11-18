@@ -112,3 +112,16 @@ export function useTopupCheckout() {
     },
   });
 }
+
+// Add this to frontend/lib/queries.ts
+
+export function usePaystackInit() {
+  return useMutation({
+    mutationFn: async ({ amountCents }: { amountCents: number }) => {
+      const { data } = await api.post('/api/v1/wallet/paystack/init', {
+        amountCents,
+      });
+      return data;
+    },
+  });
+}
