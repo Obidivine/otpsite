@@ -117,7 +117,7 @@ export function useTopupCheckout() {
 
 export function usePaystackInit() {
   return useMutation({
-    mutationFn: async ({ amountCents }: { amountCents: number }) => {
+    mutationFn: async ({ amountCents }: { amountCents: number }): Promise<PaystackInitResponse> => {
       const { data } = await api.post('/api/v1/wallet/paystack/init', {
         amountCents,
       });

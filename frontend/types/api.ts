@@ -103,3 +103,9 @@ export interface SessionsListResponse {
   success: boolean;
   sessions: SessionSummary[];
 }
+
+export interface PaystackInitResponse {
+  success: boolean;
+  authorization_url: string;
+  reference: string;
+}
