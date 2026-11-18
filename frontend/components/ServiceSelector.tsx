@@ -16,6 +16,12 @@ export const SERVICES = [
   { id: 'instagram', name: 'Instagram' },
   { id: 'tiktok', name: 'TikTok' },
   { id: 'signal', name: 'Signal' },
+  { id: 'facebook', name: 'Facebook' },
+  { id: 'snapchat', name: 'Snapchat' },
+  { id: 'linkedin', name: 'LinkedIn' },
+  { id: 'google', name: 'Google/Gmail' },
+  { id: 'googlevoice', name: 'GoogleVoice' },
+  { id: '1688', name: '1688' },
 ] as const;
 
 export type ServiceId = (typeof SERVICES)[number]['id'];

@@ -11,7 +11,13 @@ const SERVICE_MAP = {
   instagram: 457,
   tiktok: 924,
   signal: 829,
-  // Add more as SMSPool adds them: https://smspool.net/services
+  // New Services Added:
+  facebook: 329,
+  snapchat: 846,
+  linkedin: 523,
+  google: 395,
+  googlevoice: 396,
+  "1688": 1
 };
 
 // Note: The COUNTRY_MAP has been completely removed. 
