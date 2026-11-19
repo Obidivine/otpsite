@@ -9,97 +9,23 @@ const catalogRoutes = require('./src/routes/catalog.routes');
 const paymentRoutes = require('./src/routes/payment.routes');
 
 const app = express();
-app.set('trust proxy', 1);
-
+app.set('trust proxy', 1); // Trust Railway's proxy for rate limiting
 
 // ==========================================
-// CORS
+// CORS (Simplified & Fixed)
 // ==========================================
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      'http://localhost:3001',
-      'http://127.0.0.1:3001',
-      'https://otpsite-frontend.vercel.app',
-    ];
-
-    // Allow requests with no origin (curl, mobile apps, server-to-server)
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    // Allow any localhost origin (dev)
-    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-      return callback(null, true);
-    }
-
-    // Allow any Vercel preview/production deployment
-    if (/\.vercel\.app$/.test(origin)) {
-      return callback(null, true);
-    }
-
-    // Allow any ngrok-free origin (mobile testing, other tunnels)
-    if (origin.endsWith('.ngrok-free.app') || origin.endsWith('.ngrok-free.dev')) {
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    console.warn('[CORS BLOCKED]:', origin);
-    return callback(new Error('Not allowed by CORS'));
-  },
+  origin: true, // Allows any origin (localhost, Vercel, etc.)
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'verif-hash', 'upstash-signature', 'ngrok-skip-browser-warning'],
-  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
 }));
-
-// ==========================================
-// CORS — MANUAL (no cors() package)
-// ==========================================
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  const isAllowed =
-    !origin ||
-    origin.startsWith('http://localhost') ||
-    origin.startsWith('http://127.0.0.1') ||
-    /\.vercel\.app$/.test(origin) ||
-    origin.endsWith('.ngrok-free.app') ||
-    origin.endsWith('.ngrok-free.dev');
-
-  if (isAllowed && origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-  } else if (!origin) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-
-  if (req.method === 'OPTIONS') {
-    // Echo back whatever the browser requests — no hardcoded list
-    const requestedHeaders = req.headers['access-control-request-headers'];
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      requestedHeaders || 'Content-Type,Authorization,verif-hash,upstash-signature,ngrok-skip-browser-warning'
-    );
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.setHeader(
-      'Access-Control-Expose-Headers',
-      'X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset'
-    );
-    return res.status(204).end();
-  }
-
-  next();
-});
 
 // ==========================================
 // BODY PARSERS
 // ==========================================
-// server.js - must be placed before all routes that receive Paystack webhooks
+// The verify function is required for Paystack webhooks
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf;

@@ -12,15 +12,15 @@ import type {
   PaystackInitResponse
 } from '@/types/api';
 
-export function useBalance(options?: { enabled?: boolean }) {
+export function useBalance() {
   return useQuery({
     queryKey: ['balance'],
     queryFn: async () => {
-      const { data } = await api.get<BalanceResponse>('/api/v1/wallet/balance');
+      const { data } = await api.get('/api/v1/wallet/balance');
       return data;
     },
-    refetchInterval: 10000,
-    enabled: options?.enabled ?? true,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true, // Refetch when you tab back into the browser
   });
 }
 
