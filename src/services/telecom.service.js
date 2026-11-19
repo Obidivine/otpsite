@@ -19,6 +19,21 @@ function getProvider(name) {
   return provider;
 }
 
+// Add this helper function at the top of telecom.service.js
+async function fetchWithRetry(url, options, retries = 2) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fetch(url, options);
+    } catch (err) {
+      if (i === retries - 1) throw err; // Throw if last attempt fails
+      await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+    }
+  }
+}
+
+// Then, replace your existing `fetch(...)` calls with:
+// const response = await fetchWithRetry('https://api.smspool.net/...', { ... });
+
 // ... (keep the Twilio throw methods) ...
 
 // --- Polling-style (SMSPool) ---

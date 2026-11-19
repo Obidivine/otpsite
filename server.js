@@ -105,7 +105,7 @@ app.use((req, res, next) => {
 // server.js - must be placed before all routes that receive Paystack webhooks
 app.use(express.json({
   verify: (req, res, buf) => {
-    req.rawBody = buf; // Save the raw Buffer for signature verification
+    req.rawBody = buf;
   }
 }));
 app.use(express.urlencoded({ extended: true }));

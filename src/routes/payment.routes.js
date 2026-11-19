@@ -205,66 +205,10 @@ router.post('/payments/flutterwave/webhook', async (req, res) => {
 
 // ==========================================
 // PAYSTACK ROUTES
-// ==========================================
-router.post('/wallet/paystack/init', authenticateToken, async (req, res) => {
-  const { amountCents } = req.body;
-  const userId = req.user.id;
-
-  if (!amountCents || amountCents <= 0) {
-    return res.status(400).json({ error: 'Valid amountCents is required.' });
-  }
-
-  // Convert USD cents to NGN Kobo for Paystack
-  const amountKobo = Math.round((amountCents / 100) * USD_NGN_RATE * 100);
-  const txRef = `paystack_${userId}_${Date.now()}`;
-
-  try {
-    const userRes = await db.query('SELECT email FROM public.users WHERE id = $1', [userId]);
-    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    const userEmail = userRes.rows[0].email;
-
-    await db.query(
-      `INSERT INTO public.payment_intents (user_id, tx_ref, amount_cents, status)
-       VALUES ($1, $2, $3, 'PENDING')`,
-      [userId, txRef, amountCents]
-    );
-
-    const response = await fetch('https://api.paystack.co/transaction/initialize', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: userEmail,
-        amount: amountKobo, // Paystack uses Kobo
-        reference: txRef,
-        callback_url: `${process.env.FRONTEND_URL}/dashboard/wallet?status=success`,
-      }),
-    });
-
-    const paystackData = await response.json();
-
-    if (!paystackData.status) {
-      throw new Error(paystackData.message || 'Paystack init failed');
-    }
-
-    return res.status(200).json({
-      success: true,
-      authorization_url: paystackData.data.authorization_url,
-      reference: txRef,
-    });
-
-  } catch (err) {
-    console.error('[PAYSTACK INIT ERROR]:', err.message);
-    return res.status(500).json({ error: 'Failed to initialize Paystack.' });
-  }
-});
-
 router.post('/payments/paystack/webhook', async (req, res) => {
   const hash = crypto
     .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
-    .update(req.rawBody) // <-- MUST USE req.rawBody
+    .update(req.rawBody) // Make sure you added this to server.js!
     .digest('hex');
 
   if (hash !== req.headers['x-paystack-signature']) {
@@ -274,7 +218,7 @@ router.post('/payments/paystack/webhook', async (req, res) => {
   const event = req.body;
 
   if (event.event === 'charge.success') {
-    const { reference, amount } = event.data;
+    const { reference } = event.data;
     const client = await db.pool.connect();
 
     try {
@@ -302,7 +246,7 @@ router.post('/payments/paystack/webhook', async (req, res) => {
       // Credit user balance with the USD cents we saved in the intent
       await client.query(
         `UPDATE public.users SET balance_cents = balance_cents + $1 WHERE id = $2`,
-        [intent.amount_cents, userId]
+        [intent.amount_cents, userId] // Use intent.amount_cents, NOT Paystack's Kobo amount
       );
 
       // Log transaction
@@ -327,7 +271,6 @@ router.post('/payments/paystack/webhook', async (req, res) => {
 
   return res.status(200).send('Event ignored');
 });
-
 router.get('/wallet/balance', authenticateToken, async (req, res) => { /* unchanged... */ });
 router.get('/wallet/transactions', authenticateToken, async (req, res) => { /* unchanged... */ });
 
