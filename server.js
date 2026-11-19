@@ -1,7 +1,6 @@
 // server.js
 require('dotenv').config();
 const express = require('express');
-app.set('trust proxy', 1);
 const cors = require('cors');
 
 const authRoutes = require('./src/routes/auth.routes');
@@ -10,10 +9,8 @@ const catalogRoutes = require('./src/routes/catalog.routes');
 const paymentRoutes = require('./src/routes/payment.routes');
 
 const app = express();
+app.set('trust proxy', 1);
 
-// ==========================================
-// PROXY TRUST
-// ==========================================
 
 // ==========================================
 // CORS
