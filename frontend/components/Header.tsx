@@ -70,7 +70,7 @@ export function Header() {
             </span>
 
             {/* SUPPORT LINKS */}
-            <div className="border-l pl-4 ml-2 hidden sm:block">
+            <div className="border-l pl-4 ml-2 hidden block">
               <SupportLinks />
             </div>
 

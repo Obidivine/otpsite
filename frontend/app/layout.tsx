@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
+import { LandingFooter } from '@/components/LandingFooter';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,18 +45,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
+      <body className="min-h-screen flex flex-col"> {/* Add flex classes */}
+        <div className="flex-grow"> {/* This pushes the footer down */}
           {children}
-          <Toaster richColors position="top-right" />
-        </Providers>
+        </div>
+        <LandingFooter /> {/* <-- Add it here */}
       </body>
     </html>
   );
