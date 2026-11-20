@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "./providers";
-import { Toaster } from "@/components/ui/sonner";
+import { Providers } from "./providers"; // <-- RESTORED
+import { Toaster } from "@/components/ui/sonner"; // <-- RESTORED
 import { LandingFooter } from '@/components/LandingFooter';
 
 const geistSans = Geist({
@@ -52,11 +52,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col">
-        <div className="flex-grow">
-          {children}
-        </div>
+      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen flex flex-col`}>
+        <Providers> {/* <-- WRAP THE APP IN PROVIDERS */}
+          <div className="flex-grow">
+            {children}
+          </div>
+        </Providers>
         <LandingFooter />
+        <Toaster /> {/* <-- RESTORED */}
       </body>
     </html>
   );
