@@ -8,6 +8,7 @@ import { useBalance } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SupportLinks } from '@/components/SupportLinks'; // <-- Import
 
 export function Header() {
   const router = useRouter();
@@ -16,7 +17,9 @@ export function Header() {
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const token = useAuthStore((s) => s.token);
 
-  const { data: balanceData } = useBalance();
+  const { data: balanceData } = useBalance({
+    enabled: hasHydrated && !!token,
+  });
 
   function handleLogout() {
     logout();
@@ -49,20 +52,26 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-4">
-        <Link
-  href="/dashboard/wallet"
-  className="text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1.5"
->
-  <span className="hidden sm:inline">Balance:</span>{' '}
-  {balanceData ? (
-    <span className="text-slate-900">{balanceUSD}</span>
-  ) : (
-    <Skeleton className="h-4 w-12 inline-block" />
-  )}
-</Link>
+            <Link
+              href="/dashboard/wallet"
+              className="text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1.5"
+            >
+              <span className="hidden sm:inline">Balance:</span>{' '}
+              {balanceData ? (
+                <span className="text-slate-900">{balanceUSD}</span>
+              ) : (
+                <Skeleton className="h-4 w-12 inline-block" />
+              )}
+            </Link>
+            
             <span className="hidden sm:inline text-sm text-slate-500">
               {user?.email}
             </span>
+
+            {/* ADD SUPPORT LINKS HERE */}
+            <div className="border-l pl-4 ml-2 hidden sm:block">
+              <SupportLinks />
+            </div>
 
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
