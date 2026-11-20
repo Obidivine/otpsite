@@ -12,10 +12,10 @@ export function LandingFooter() {
         </div>
         
         <div className="flex flex-col items-center md:items-end gap-3">
-          <p className="text-sm">Need help? Contact us:</p>
-          {  /* ADD SUPPORT LINKS HERE */ }
-          <SupportLinks className="[&>a]:text-slate-400 [&>a:hover]:text-white" />
-        </div>
+  <p className="text-sm">Need help? Contact us:</p>
+  {/* Replace your old text with this: */}
+  <SupportLinks className="[&>a]:text-slate-400 [&>a:hover]:text-white" />
+</div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pt-8 border-t border-slate-800 text-center text-xs">
         © {new Date().getFullYear()} OTP Reseller. All rights reserved.
