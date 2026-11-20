@@ -59,6 +59,7 @@ class SessionStore {
       numberSid: row.number_sid,
       phoneNumber: row.phone_number,
       status: row.status,
+	  createdAt: new Date(row.created_at).getTime(),
       expiresAt: new Date(row.expires_at).getTime(),
       refundedAt: row.refunded_at,
       otp: row.otp_code ? {

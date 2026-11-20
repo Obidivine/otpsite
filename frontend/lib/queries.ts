@@ -125,3 +125,18 @@ export function usePaystackInit() {
     },
   });
 }
+
+export function useCancelSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (phoneNumber: string) => {
+      const { data } = await api.post(`/api/v1/sessions/${encodeURIComponent(phoneNumber)}/cancel`);
+      return data;
+    },
+    onSuccess: () => {
+      // Refresh dashboard data
+      queryClient.invalidateQueries({ queryKey: ['balance'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    },
+  });
+}

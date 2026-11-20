@@ -210,4 +210,52 @@ router.post('/:phoneNumber/release', authenticateToken, async (req, res) => {
   }
 });
 
+// ==========================================
+// POST /api/v1/sessions/:phoneNumber/cancel (PROTECTED)
+// ==========================================
+router.post('/:phoneNumber/cancel', authenticateToken, async (req, res) => {
+  try {
+    const session = await sessionStore.getSessionByPhone(req.params.phoneNumber);
+
+    if (!session) return res.status(404).json({ error: 'Session not found.' });
+    if (String(session.userId) !== String(req.user.id)) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
+    }
+
+    if (session.status !== 'ACTIVE') {
+      return res.status(400).json({ error: `Cannot cancel a session that is ${session.status}.` });
+    }
+
+    // Check if 3 minutes have passed
+    const timeElapsed = Date.now() - session.createdAt;
+    const threeMinutes = 3 * 60 * 1000;
+
+    if (timeElapsed < threeMinutes) {
+      return res.status(400).json({ error: 'You must wait 3 minutes before cancelling.' });
+    }
+
+    // 1. Cancel with SMSPool FIRST
+    if (session.providerOrderId) {
+      try {
+        await telecomService.cancelOrder(session.providerOrderId, session.provider);
+      } catch (cancelErr) {
+        console.error('[SMSPOOL CANCEL FAILED]:', cancelErr.message);
+        return res.status(502).json({ error: 'Failed to cancel with the provider. Please try again later.' });
+      }
+    }
+
+    // 2. Update DB Status to CANCELLED
+    await sessionStore.updateSessionStatus(session.phoneNumber, 'CANCELLED');
+
+    // 3. Refund the user
+    await billingService.refundExpiredSession(session.id, req.user.id); // Reusing your existing refund logic
+
+    return res.status(200).json({ success: true, message: 'Session cancelled and refunded.' });
+
+  } catch (error) {
+    console.error('[CANCEL SESSION ERROR]:', error.message);
+    return res.status(500).json({ error: 'Failed to cancel session.' });
+  }
+});
+
 module.exports = router;

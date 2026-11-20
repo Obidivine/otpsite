@@ -2,12 +2,12 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Header } from '@/components/Header';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { OtpDisplay } from '@/components/OtpDisplay';
-import { useSession } from '@/lib/queries';
+import { useSession, useCancelSession } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Copy, Check, AlertCircle } from 'lucide-react';
@@ -52,8 +52,13 @@ function SessionLoader() {
 }
 
 function SessionContent({ phoneNumber }: { phoneNumber: string }) {
+  const router = useRouter();
   const { data: session, isLoading, error } = useSession(phoneNumber);
-    const lastOtpCode = useRef<string | null>(null);
+  const cancelMutation = useCancelSession();
+  
+  const lastOtpCode = useRef<string | null>(null);
+  const [copiedNumber, setCopiedNumber] = useState(false);
+  const [canCancel, setCanCancel] = useState(false);
 
   useEffect(() => {
     if (session?.otp?.code && session.otp.code !== lastOtpCode.current) {
@@ -64,7 +69,25 @@ function SessionContent({ phoneNumber }: { phoneNumber: string }) {
       });
     }
   }, [session?.otp?.code]);
-  const [copiedNumber, setCopiedNumber] = useState(false);
+
+  // The 3-Minute Timer Logic
+  useEffect(() => {
+    if (!session || session.status !== 'ACTIVE') return;
+
+    const createdTime = new Date(session.createdAt).getTime();
+    const threeMinutes = 3 * 60 * 1000;
+    const timeElapsed = Date.now() - createdTime;
+    const timeRemaining = threeMinutes - timeElapsed;
+
+    if (timeRemaining <= 0) {
+      setCanCancel(true);
+    } else {
+      const timer = setTimeout(() => {
+        setCanCancel(true);
+      }, timeRemaining);
+      return () => clearTimeout(timer);
+    }
+  }, [session]);
 
   async function copyPhoneNumber() {
     try {
@@ -76,7 +99,17 @@ function SessionContent({ phoneNumber }: { phoneNumber: string }) {
     }
   }
 
-    if (isLoading) {
+  async function handleCancel() {
+    try {
+      await cancelMutation.mutateAsync(phoneNumber);
+      toast.success('Session cancelled. Your refund is processing.');
+      router.push('/dashboard');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to cancel session.');
+    }
+  }
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -115,12 +148,12 @@ function SessionContent({ phoneNumber }: { phoneNumber: string }) {
 
   return (
     <div className="space-y-6">
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-  <h1 className="text-2xl font-bold">
-    {isCompleted ? 'OTP Received' : isExpired ? 'Session Expired' : 'Waiting for OTP'}
-  </h1>
-  {isActive && <CountdownTimer expiresAt={session.expiresAt} />}
-</div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-2xl font-bold">
+          {isCompleted ? 'OTP Received' : isExpired ? 'Session Expired' : 'Waiting for OTP'}
+        </h1>
+        {isActive && <CountdownTimer expiresAt={session.expiresAt} />}
+      </div>
 
       <Card>
         <CardContent className="p-6">
@@ -160,6 +193,29 @@ function SessionContent({ phoneNumber }: { phoneNumber: string }) {
           rawText={session.otp.rawText}
           receivedAt={session.otp.receivedAt}
         />
+      )}
+
+      {/* THE CANCEL BUTTON SECTION */}
+      {isActive && (
+        <Card className="border-slate-200">
+          <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-4">
+            <p className="text-sm text-slate-600">
+              Changed your mind? You can cancel this session after 3 minutes to get a refund.
+            </p>
+            <Button 
+              variant={canCancel ? "default" : "secondary"}
+              disabled={!canCancel || cancelMutation.isPending}
+              onClick={handleCancel}
+              className="w-full sm:w-auto"
+            >
+              {cancelMutation.isPending 
+                ? 'Cancelling...' 
+                : canCancel 
+                  ? 'Cancel Session & Refund' 
+                  : 'Wait 3 mins to Cancel'}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {isActive && !hasOtp && (
