@@ -8,7 +8,7 @@ import { useBalance } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SupportLinks } from '@/components/SupportLinks'; // <-- Import
+import { SupportLinks } from '@/components/SupportLinks';
 
 export function Header() {
   const router = useRouter();
@@ -17,7 +17,10 @@ export function Header() {
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const token = useAuthStore((s) => s.token);
 
-  const { data: balanceData } = useBalance();)
+  // This works perfectly now that queries.ts accepts the options object
+  const { data: balanceData } = useBalance({
+    enabled: hasHydrated && !!token,
+  });
 
   function handleLogout() {
     logout();
@@ -66,7 +69,7 @@ export function Header() {
               {user?.email}
             </span>
 
-            {/* ADD SUPPORT LINKS HERE */}
+            {/* SUPPORT LINKS */}
             <div className="border-l pl-4 ml-2 hidden sm:block">
               <SupportLinks />
             </div>
