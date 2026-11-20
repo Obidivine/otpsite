@@ -45,14 +45,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col"> {/* Add flex classes */}
-        <div className="flex-grow"> {/* This pushes the footer down */}
+      <body className="min-h-screen flex flex-col">
+        <div className="flex-grow">
           {children}
         </div>
-        <LandingFooter /> {/* <-- Add it here */}
+        <LandingFooter />
       </body>
     </html>
   );
