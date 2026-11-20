@@ -49,6 +49,7 @@ export interface SessionDetails {
   phoneNumber: string;
   status: 'ACTIVE' | 'COMPLETED' | 'EXPIRED' | 'RELEASED';
   expiresAt: number;
+  createdAt: number;
   refundedAt: string | null;
   otp: {
     code: string;
