@@ -1,27 +1,30 @@
 // frontend/lib/queries.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
+
 import type {
   CatalogResponse,
   SessionDetails,
   RentResponse,
-  BalanceResponse,
+  BalanceResponse, // <-- Make sure this is imported
   TransactionsResponse,
   TopupInitResponse,
   SessionsListResponse,
   PaystackInitResponse
 } from '@/types/api';
 
+// ... other hooks ...
+
 export function useBalance(options?: any) {
-  return useQuery({
+  return useQuery<BalanceResponse>({ // <-- Add <BalanceResponse> here
     queryKey: ['balance'],
     queryFn: async () => {
-      const { data } = await api.get('/api/v1/wallet/balance');
+      const { data } = await api.get<BalanceResponse>('/api/v1/wallet/balance'); // <-- And here
       return data;
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
-    ...options, // <--- THIS IS THE MAGIC LINE
+    ...options,
   });
 }
 
