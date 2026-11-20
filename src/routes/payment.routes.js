@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const authenticateToken = require('../middleware/auth.middleware');
-const crypto = require('crypto'); // <-- ADDED FOR PAYSTACK
+const crypto = require('crypto');
 
 const USD_NGN_RATE = parseFloat(process.env.USD_NGN_RATE || '1500');
 
@@ -205,10 +205,65 @@ router.post('/payments/flutterwave/webhook', async (req, res) => {
 
 // ==========================================
 // PAYSTACK ROUTES
+// ==========================================
+router.post('/wallet/paystack/init', authenticateToken, async (req, res) => {
+  const { amountCents } = req.body;
+  const userId = req.user.id;
+
+  if (!amountCents || amountCents <= 0) {
+    return res.status(400).json({ error: 'Valid amountCents is required.' });
+  }
+
+  const amountKobo = Math.round((amountCents / 100) * USD_NGN_RATE * 100);
+  const txRef = `paystack_${userId}_${Date.now()}`;
+
+  try {
+    const userRes = await db.query('SELECT email FROM public.users WHERE id = $1', [userId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    const userEmail = userRes.rows[0].email;
+
+    await db.query(
+      `INSERT INTO public.payment_intents (user_id, tx_ref, amount_cents, status)
+       VALUES ($1, $2, $3, 'PENDING')`,
+      [userId, txRef, amountCents]
+    );
+
+    const response = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: userEmail,
+        amount: amountKobo,
+        reference: txRef,
+        callback_url: `${process.env.FRONTEND_URL}/dashboard/wallet?status=success`,
+      }),
+    });
+
+    const paystackData = await response.json();
+
+    if (!paystackData.status) {
+      throw new Error(paystackData.message || 'Paystack init failed');
+    }
+
+    return res.status(200).json({
+      success: true,
+      authorization_url: paystackData.data.authorization_url,
+      reference: txRef,
+    });
+
+  } catch (err) {
+    console.error('[PAYSTACK INIT ERROR]:', err.message);
+    return res.status(500).json({ error: 'Failed to initialize Paystack.' });
+  }
+});
+
 router.post('/payments/paystack/webhook', async (req, res) => {
   const hash = crypto
     .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
-    .update(req.rawBody) // Make sure you added this to server.js!
+    .update(req.rawBody)
     .digest('hex');
 
   if (hash !== req.headers['x-paystack-signature']) {
@@ -237,19 +292,16 @@ router.post('/payments/paystack/webhook', async (req, res) => {
       const intent = intentRes.rows[0];
       const userId = intent.user_id;
 
-      // Update status
       await client.query(
         `UPDATE public.payment_intents SET status = 'SUCCESS' WHERE tx_ref = $1`,
         [reference]
       );
 
-      // Credit user balance with the USD cents we saved in the intent
       await client.query(
         `UPDATE public.users SET balance_cents = balance_cents + $1 WHERE id = $2`,
-        [intent.amount_cents, userId] // Use intent.amount_cents, NOT Paystack's Kobo amount
+        [intent.amount_cents, userId]
       );
 
-      // Log transaction
       await client.query(
         `INSERT INTO public.transactions (user_id, amount_cents, type, reference, status, notes)
          VALUES ($1, $2, 'DEPOSIT', $3, 'COMPLETED', 'Paystack Deposit')`,
@@ -271,7 +323,54 @@ router.post('/payments/paystack/webhook', async (req, res) => {
 
   return res.status(200).send('Event ignored');
 });
-router.get('/wallet/balance', authenticateToken, async (req, res) => { /* unchanged... */ });
-router.get('/wallet/transactions', authenticateToken, async (req, res) => { /* unchanged... */ });
+
+// ==========================================
+// WALLET ROUTES (Restored & Fixed)
+// ==========================================
+router.get('/wallet/balance', authenticateToken, async (req, res) => {
+  try {
+    console.log(`[BALANCE REQUEST] Fetching for user: ${req.user.id}`);
+    
+    const { rows } = await db.query(
+      `SELECT balance_cents FROM public.users WHERE id = $1;`,
+      [req.user.id]
+    );
+
+    if (rows.length === 0) {
+      console.warn(`[BALANCE ERROR] User not found: ${req.user.id}`);
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const balanceCents = parseInt(rows[0].balance_cents, 10);
+    console.log(`[BALANCE SUCCESS] User: ${req.user.id} | Balance: ${balanceCents}`);
+
+    return res.status(200).json({
+      success: true,
+      balanceCents,
+      balanceUSD: (balanceCents / 100).toFixed(2)
+    });
+  } catch (err) {
+    console.error('[BALANCE DB ERROR]:', err.message);
+    return res.status(500).json({ error: 'Failed to fetch balance.' });
+  }
+});
+
+router.get('/wallet/transactions', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT amount_cents, type, reference, status, notes, created_at
+       FROM public.transactions
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 50;`,
+      [req.user.id]
+    );
+
+    return res.status(200).json({ success: true, transactions: rows });
+  } catch (err) {
+    console.error('[TRANSACTIONS ERROR]:', err.message);
+    return res.status(500).json({ error: 'Failed to fetch transactions.' });
+  }
+});
 
 module.exports = router;
