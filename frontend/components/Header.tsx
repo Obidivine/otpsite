@@ -17,9 +17,7 @@ export function Header() {
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const token = useAuthStore((s) => s.token);
 
-  const { data: balanceData } = useBalance({
-    enabled: hasHydrated && !!token,
-  });
+  const { data: balanceData } = useBalance();)
 
   function handleLogout() {
     logout();
