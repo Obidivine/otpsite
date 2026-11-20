@@ -13,12 +13,7 @@ export function LandingFooter() {
         
         <div className="flex flex-col items-center md:items-end gap-3">
           <p className="text-sm">Need help? Contact us:</p>
-          { @telegram: <a href="https://t.me/otpsite360"> t.me/otpsite360 </a><br>
-          @whatsapp: <a href="https://wa.me/2347040763069">wa.me/2347040763069</a><br>
-          @email: <a href="otpresseller360@gmail.com">otpreseller360@gmail.com</a>
-			  
-			  /* ADD SUPPORT LINKS HERE */
-			}
+          {  /* ADD SUPPORT LINKS HERE */ }
           <SupportLinks className="[&>a]:text-slate-400 [&>a:hover]:text-white" />
         </div>
       </div>
