@@ -64,7 +64,7 @@ function Hero() {
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/signup">
             <Button size="lg" className="w-full sm:w-auto">
-              Get Started — From $1.00
+              Get Started — From ₦2,500
             </Button>
           </Link>
           <Link href="/login">
@@ -191,9 +191,7 @@ function PricingPreview() {
                   <div className="text-xs text-slate-500 mb-4">
                     {item.success_rate}% success rate
                   </div>
-                  <div className="text-3xl font-bold">
-                    ${(item.price_cents / 100).toFixed(2)}
-                  </div>
+                  <div className="text-4xl font-bold">₦{(item.price_cents / 100).toLocaleString('en-NG')}</div>
                   <div className="text-xs text-slate-500 mt-1">per number</div>
                 </CardContent>
               </Card>
@@ -219,7 +217,7 @@ function FinalCTA() {
           Ready to verify your account?
         </h2>
         <p className="mt-4 text-slate-300 text-lg">
-          Sign up in seconds. Top up from ₦4,500. Get your number in under a minute.
+          Sign up in seconds. Top up from ₦1,000. Get your number in under a minute.
         </p>
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">

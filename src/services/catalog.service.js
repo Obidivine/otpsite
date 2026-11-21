@@ -19,7 +19,7 @@ class CatalogService {
         AND c.is_active = TRUE
         AND p.is_available = TRUE
         AND p.stock_count > 0
-      ORDER BY p.price_cents ASC;
+        ORDER BY p.priority DESC, p.price_cents ASC;
     `;
     const { rows } = await db.query(query, [serviceId.toLowerCase()]);
 
