@@ -32,11 +32,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { DollarSign, ArrowDownCircle, ArrowUpCircle, Wallet } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Wallet, Banknote } from 'lucide-react'; // Changed DollarSign to Banknote
 import { EmptyState } from '@/components/EmptyState';
 import { Receipt } from 'lucide-react';
 
-const PRESET_AMOUNTS = [450000, 750000, 1500000, 3000000]; // 4,500, 7,500, 15,000, 30,000 in Kobo
+// Presets in Kobo: ₦4,500, ₦7,500, ₦15,000, ₦30,000
+const PRESET_AMOUNTS = [450000, 750000, 1500000, 3000000]; 
 
 export default function WalletPage() {
   return (
@@ -52,27 +53,25 @@ export default function WalletPage() {
 }
 
 function WalletContent() {
-	const paystackMutation = usePaystackInit();
+  const paystackMutation = usePaystackInit();
   const searchParams = useSearchParams();
   const returnStatus = searchParams?.get('status');
 
   const { data: balanceData, refetch: refetchBalance } = useBalance();
   const { data: txData, refetch: refetchTx } = useTransactions();
 
-  const [amountCents, setAmountCents] = useState<number>(500);
+  const [amountCents, setAmountCents] = useState<number>(450000); // Default to ₦4,500
   const [customAmount, setCustomAmount] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
 
   const initMutation = useTopupInit();
   const checkoutMutation = useTopupCheckout();
 
   // Handle Flutterwave return
-    useEffect(() => {
+  useEffect(() => {
     if (returnStatus === 'success' || returnStatus === 'successful') {
       toast.success('Payment received! Updating your balance...');
-      // Give the webhook ~2 seconds to land before refetching
       setTimeout(() => {
         refetchBalance();
         refetchTx();
@@ -81,7 +80,7 @@ function WalletContent() {
   }, [returnStatus, refetchBalance, refetchTx]);
 
   const balanceCents = balanceData?.balanceCents ?? 0;
-  const balanceUSD = `$${(balanceCents / 100).toFixed(2)}`;
+  const balanceNaira = `₦${(balanceCents / 100).toLocaleString('en-NG')}`;
   const transactions = txData?.transactions ?? [];
 
   function selectPreset(cents: number) {
@@ -91,65 +90,60 @@ function WalletContent() {
   }
 
   function handleCustomAmountChange(value: string) {
-  const cleaned = value.replace(/[^0-9.]/g, '');
-  setCustomAmount(cleaned);
-  if (cleaned) {
-    const naira = parseFloat(cleaned);
-    if (!isNaN(naira) && naira > 0) {
-      setAmountCents(Math.round(naira * 100)); // Naira to Kobo
-      setError(null);
+    const cleaned = value.replace(/[^0-9.]/g, '');
+    setCustomAmount(cleaned);
+    if (cleaned) {
+      const naira = parseFloat(cleaned);
+      if (!isNaN(naira) && naira > 0) {
+        setAmountCents(Math.round(naira * 100)); // Convert Naira to Kobo
+        setError(null);
+      } else {
+        setAmountCents(0);
+      }
     } else {
       setAmountCents(0);
     }
-  } else {
-    setAmountCents(0);
   }
-}
 
   function openConfirmation() {
     setError(null);
 
-    if (amountCents < 300) {
-  setError('Minimum top-up amount is $3.00.');
-  return;
-}
-    if (amountCents > 50000) {
-      setError('Maximum top-up amount is $500.00.');
+    if (amountCents < 100000) { // ₦1,000 minimum
+      setError('Minimum top-up amount is ₦1,000.');
+      return;
+    }
+    if (amountCents > 50000000) { // ₦500,000 maximum
+      setError('Maximum top-up amount is ₦500,000.');
       return;
     }
 
     setDialogOpen(true);
   }
 
-  // Update your handleConfirmTopup function to accept a provider:
-async function handleTopup(provider: 'flutterwave' | 'paystack') {
-  setError(null);
-  setDialogOpen(false);
+  async function handleTopup(provider: 'flutterwave' | 'paystack') {
+    setError(null);
+    setDialogOpen(false);
 
-  try {
-    if (provider === 'flutterwave') {
-      const initResult = await initMutation.mutateAsync({ amountCents });
-      const checkoutResult = await checkoutMutation.mutateAsync({ txRef: initResult.txRef });
-      window.location.href = checkoutResult.checkoutUrl;
-    } else {
-      // Paystack Flow
-      const result = await paystackMutation.mutateAsync({ amountCents });
-      window.location.href = result.authorization_url;
+    try {
+      if (provider === 'flutterwave') {
+        const initResult = await initMutation.mutateAsync({ amountCents });
+        const checkoutResult = await checkoutMutation.mutateAsync({ txRef: initResult.txRef });
+        window.location.href = checkoutResult.checkoutUrl;
+      } else {
+        const result = await paystackMutation.mutateAsync({ amountCents });
+        window.location.href = result.authorization_url;
+      }
+    } catch (err: any) {
+      const message = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to start top-up.';
+      toast.error(message);
     }
-  } catch (err: any) {
-    const message = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to start top-up.';
-    toast.error(message);
   }
-}
 
-  const amountUSD = `$${(amountCents / 100).toFixed(2)}`;
   const amountNaira = `₦${(amountCents / 100).toLocaleString('en-NG')}`;
   const isProcessing = initMutation.isPending || checkoutMutation.isPending;
 
   return (
     <div className="space-y-6">
-     
-
       <div>
         <h1 className="text-3xl font-bold">Wallet</h1>
         <p className="text-slate-600 mt-1">
@@ -166,7 +160,7 @@ async function handleTopup(provider: 'flutterwave' | 'paystack') {
           <Wallet className="h-4 w-4 text-slate-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-bold">{balanceUSD}</div>
+          <div className="text-4xl font-bold">{balanceNaira}</div>
           <p className="text-xs text-slate-500 mt-1">
             Available for new rentals
           </p>
@@ -178,7 +172,7 @@ async function handleTopup(provider: 'flutterwave' | 'paystack') {
         <CardHeader>
           <CardTitle>Top Up</CardTitle>
           <CardDescription>
-            Choose an amount in USD. You'll pay the NGN equivalent via Flutterwave.
+            Choose an amount in Naira. You will be redirected to a secure checkout to complete the payment.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -196,32 +190,32 @@ async function handleTopup(provider: 'flutterwave' | 'paystack') {
                   }
                   onClick={() => selectPreset(cents)}
                 >
-                  ${(cents / 100).toFixed(0)}
+                  ₦{(cents / 100).toLocaleString('en-NG')}
                 </Button>
               ))}
             </div>
           </div>
 
           <div>
-  <Label htmlFor="customAmount" className="text-xs uppercase tracking-wide text-slate-500">
-    Or enter custom amount (USD)
-  </Label>
-  <div className="relative mt-2">
-    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-    <Input
-      id="customAmount"
-      type="text"
-      inputMode="decimal"
-      placeholder="0.00"
-      value={customAmount}
-      onChange={(e) => handleCustomAmountChange(e.target.value)}
-      className="pl-9"
-    />
-  </div>
-  <p className="text-xs text-slate-500 mt-1.5">
-    Minimum $3.00 · Maximum $500.00
-  </p>
-</div>
+            <Label htmlFor="customAmount" className="text-xs uppercase tracking-wide text-slate-500">
+              Or enter custom amount (Naira)
+            </Label>
+            <div className="relative mt-2">
+              <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                id="customAmount"
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={customAmount}
+                onChange={(e) => handleCustomAmountChange(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <p className="text-xs text-slate-500 mt-1.5">
+              Minimum ₦1,000 · Maximum ₦500,000
+            </p>
+          </div>
 
           {error && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
@@ -230,25 +224,25 @@ async function handleTopup(provider: 'flutterwave' | 'paystack') {
           )}
 
           <div className="pt-2 border-t">
-  <div className="flex items-center justify-between mb-3">
-    <span className="text-sm text-slate-600">You're topping up:</span>
-    <span className="text-lg font-semibold">{amountUSD}</span>
-  </div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-slate-600">You're topping up:</span>
+              <span className="text-lg font-semibold">{amountNaira}</span>
+            </div>
 
-  {amountCents > 0 && amountCents < 300 && (
-    <p className="text-xs text-amber-600 mb-2">
-      Minimum top-up is $3.00. Please enter at least $3.
-    </p>
-  )}
+            {amountCents > 0 && amountCents < 100000 && (
+              <p className="text-xs text-amber-600 mb-2">
+                Minimum top-up is ₦1,000. Please enter at least ₦1,000.
+              </p>
+            )}
 
-  <Button
-    onClick={openConfirmation}
-    disabled={amountCents < 300 || isProcessing}
-    className="w-full"
-  >
-    {isProcessing ? 'Processing...' : `Top Up ${amountUSD}`}
-  </Button>
-</div>
+            <Button
+              onClick={openConfirmation}
+              disabled={amountCents < 100000 || isProcessing}
+              className="w-full"
+            >
+              {isProcessing ? 'Processing...' : `Top Up ${amountNaira}`}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -260,30 +254,29 @@ async function handleTopup(provider: 'flutterwave' | 'paystack') {
         </CardHeader>
         <CardContent>
           {!txData ? (
-  <div className="space-y-2">
-    {[1, 2, 3].map((i) => (
-      <Skeleton key={i} className="h-16 rounded-lg" />
-    ))}
-  </div>
-) : transactions.length === 0 ? (
-  <EmptyState
-    icon={Receipt}
-    title="No transactions yet"
-    description="Your deposits, refunds, and rental charges will appear here. Top up your wallet to get started."
-    actionLabel="Top Up Wallet"
-    onAction={() => {
-      // Scroll to the top-up section
-      document.getElementById('customAmount')?.focus();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }}
-  />
-) : (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-16 rounded-lg" />
+              ))}
+            </div>
+          ) : transactions.length === 0 ? (
+            <EmptyState
+              icon={Receipt}
+              title="No transactions yet"
+              description="Your deposits, refunds, and rental charges will appear here. Top up your wallet to get started."
+              actionLabel="Top Up Wallet"
+              onAction={() => {
+                document.getElementById('customAmount')?.focus();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          ) : (
             <div className="space-y-2">
               {transactions.map((tx) => {
                 const isCredit = tx.amount_cents > 0;
                 const Icon = isCredit ? ArrowDownCircle : ArrowUpCircle;
                 const color = isCredit ? 'text-green-600' : 'text-slate-600';
-                const sign = isCredit ? '+' : '';
+                const sign = isCredit ? '+' : '-';
                 return (
                   <div
                     key={tx.reference}
@@ -301,7 +294,7 @@ async function handleTopup(provider: 'flutterwave' | 'paystack') {
                       </div>
                     </div>
                     <div className={`font-mono font-medium ${color}`}>
-                      {sign}${(Math.abs(tx.amount_cents) / 100).toFixed(2)}
+                      {sign}₦{(Math.abs(tx.amount_cents) / 100).toLocaleString('en-NG')}
                     </div>
                   </div>
                 );
@@ -323,42 +316,37 @@ async function handleTopup(provider: 'flutterwave' | 'paystack') {
 
           <div className="py-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">Amount (USD)</span>
-              <span className="font-semibold">{amountUSD}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">You'll be charged</span>
-              <span className="font-semibold text-lg">{amountNGN}</span>
+              <span className="text-sm text-slate-600">Amount</span>
+              <span className="font-semibold text-lg">{amountNaira}</span>
             </div>
             <p className="text-xs text-slate-500 pt-2 border-t">
-              You'll be redirected to Flutterwave's secure checkout to complete the payment.
-              Your balance updates automatically once payment is confirmed.
+              You'll be redirected to a secure checkout to complete the payment. Your balance updates automatically once payment is confirmed.
             </p>
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
-  <Button
-    variant="outline"
-    onClick={() => setDialogOpen(false)}
-    disabled={isProcessing}
-  >
-    Cancel
-  </Button>
-  <Button 
-    onClick={() => handleTopup('flutterwave')} 
-    disabled={isProcessing}
-    className="bg-orange-600 hover:bg-orange-700 text-white" // Flutterwave brand color
-  >
-    {isProcessing ? 'Redirecting...' : 'Pay with Flutterwave'}
-  </Button>
-  <Button 
-    onClick={() => handleTopup('paystack')} 
-    disabled={isProcessing}
-    className="bg-blue-600 hover:bg-blue-700 text-white" // Paystack brand color
-  >
-    {isProcessing ? 'Redirecting...' : 'Pay with Paystack'}
-  </Button>
-</DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+              disabled={isProcessing}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => handleTopup('flutterwave')}
+              disabled={isProcessing}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {isProcessing ? 'Redirecting...' : 'Pay with Flutterwave'}
+            </Button>
+            <Button
+              onClick={() => handleTopup('paystack')}
+              disabled={isProcessing}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isProcessing ? 'Redirecting...' : 'Pay with Paystack'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

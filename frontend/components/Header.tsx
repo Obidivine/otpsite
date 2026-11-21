@@ -27,9 +27,9 @@ export function Header() {
     router.push('/login');
   }
 
-  const balanceNaira = balanceData 
-  ? `₦${(balanceData.balanceCents / 100).toLocaleString('en-NG')}` 
-  : '₦—';
+    const balanceNaira = balanceData
+    ? `₦${(balanceData.balanceCents / 100).toLocaleString('en-NG')}`
+    : '₦—';
 
   return (
     <header className="border-b bg-white sticky top-0 z-40">
@@ -59,7 +59,7 @@ export function Header() {
             >
               <span className="hidden sm:inline">Balance:</span>{' '}
               {balanceData ? (
-                <span className="text-slate-900">{balanceUSD}</span>
+				<span className="text-slate-900">{balanceNaira}</span>
               ) : (
                 <Skeleton className="h-4 w-12 inline-block" />
               )}
