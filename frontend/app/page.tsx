@@ -64,7 +64,7 @@ function Hero() {
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/signup">
             <Button size="lg" className="w-full sm:w-auto">
-              Get Started — From ₦2,500
+              Get Started — From ₦1,000
             </Button>
           </Link>
           <Link href="/login">
