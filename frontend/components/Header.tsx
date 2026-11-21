@@ -27,9 +27,9 @@ export function Header() {
     router.push('/login');
   }
 
-  const balanceUSD = balanceData
-    ? `$${(balanceData.balanceCents / 100).toFixed(2)}`
-    : '$—';
+  const balanceNaira = balanceData 
+  ? `₦${(balanceData.balanceCents / 100).toLocaleString('en-NG')}` 
+  : '₦—';
 
   return (
     <header className="border-b bg-white sticky top-0 z-40">

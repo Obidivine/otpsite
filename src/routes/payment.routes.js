@@ -5,21 +5,18 @@ const db = require('../config/db');
 const authenticateToken = require('../middleware/auth.middleware');
 const crypto = require('crypto');
 
-const USD_NGN_RATE = parseFloat(process.env.USD_NGN_RATE || '1500');
-
 // ==========================================
-// FLUTTERWAVE ROUTES
+// FLUTTERWAVE ROUTES (NAIRA/KOBO ONLY)
 // ==========================================
 router.post('/wallet/topup/init', authenticateToken, async (req, res) => {
-  const { amountCents } = req.body;
+  const { amountCents } = req.body; // amountCents is now KOBO
   const userId = req.user.id;
 
   if (!amountCents || amountCents <= 0) {
-    return res.status(400).json({ error: 'Valid amountCents is required.' });
+    return res.status(400).json({ error: 'Valid amountCents (in Kobo) is required.' });
   }
 
   const txRef = `topup_${userId}_${Date.now()}`;
-  const amountNGN = (amountCents / 100) * USD_NGN_RATE;
 
   try {
     await db.query(
@@ -32,7 +29,6 @@ router.post('/wallet/topup/init', authenticateToken, async (req, res) => {
       success: true,
       txRef,
       amountCents,
-      amountNGN: Math.round(amountNGN * 100) / 100,
       currency: 'NGN'
     });
   } catch (err) {
@@ -80,7 +76,8 @@ router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
     }
 
     const userEmail = userRes.rows[0].email;
-    const amountNGN = (parseInt(intent.amount_cents, 10) / 100) * USD_NGN_RATE;
+    // Convert Kobo to Naira for Flutterwave
+    const amountNGN = parseInt(intent.amount_cents, 10) / 100; 
 
     const flwResponse = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
@@ -96,7 +93,7 @@ router.post('/wallet/topup/checkout', authenticateToken, async (req, res) => {
         customer: { email: userEmail },
         customizations: {
           title: 'OTP Reseller Top-Up',
-          description: `Wallet top-up of $${(parseInt(intent.amount_cents, 10) / 100).toFixed(2)}`,
+          description: `Wallet top-up of ₦${amountNGN.toLocaleString('en-NG')}`,
         },
       }),
     });
@@ -162,7 +159,8 @@ router.post('/payments/flutterwave/webhook', async (req, res) => {
     }
 
     const intent = intentRes.rows[0];
-    const expectedNGN = (parseInt(intent.amount_cents, 10) / 100) * USD_NGN_RATE;
+    // Expected amount in Naira (Kobo / 100)
+    const expectedNGN = parseInt(intent.amount_cents, 10) / 100;
 
     if (paidAmountNGN + 0.01 < expectedNGN) {
       await client.query('ROLLBACK');
@@ -170,8 +168,8 @@ router.post('/payments/flutterwave/webhook', async (req, res) => {
     }
 
     const userId = intent.user_id;
-    const amountUSD = paidAmountNGN / USD_NGN_RATE;
-    const amountCents = Math.round(amountUSD * 100);
+    // Convert paid Naira to Kobo
+    const amountKobo = Math.round(paidAmountNGN * 100); 
 
     await client.query(
       `UPDATE public.payment_intents SET status = 'SUCCESS' WHERE tx_ref = $1;`,
@@ -180,17 +178,17 @@ router.post('/payments/flutterwave/webhook', async (req, res) => {
 
     await client.query(
       `UPDATE public.users SET balance_cents = balance_cents + $1 WHERE id = $2;`,
-      [amountCents, userId]
+      [amountKobo, userId]
     );
 
     await client.query(
       `INSERT INTO public.transactions (user_id, amount_cents, type, reference, status, notes)
        VALUES ($1, $2, 'DEPOSIT', $3, 'COMPLETED', $4);`,
-      [userId, amountCents, txRef, `Flutterwave Deposit: ${paidAmountNGN} NGN`]
+      [userId, amountKobo, txRef, `Flutterwave Deposit: ₦${paidAmountNGN.toLocaleString('en-NG')}`]
     );
 
     await client.query('COMMIT');
-    console.log(`[DEPOSIT SUCCESS] Credited user ${userId} with ${amountCents} cents.`);
+    console.log(`[DEPOSIT SUCCESS] Credited user ${userId} with ${amountKobo} Kobo.`);
 
     return res.status(200).json({ status: 'success' });
 
@@ -204,17 +202,18 @@ router.post('/payments/flutterwave/webhook', async (req, res) => {
 });
 
 // ==========================================
-// PAYSTACK ROUTES
+// PAYSTACK ROUTES (NAIRA/KOBO ONLY)
 // ==========================================
 router.post('/wallet/paystack/init', authenticateToken, async (req, res) => {
-  const { amountCents } = req.body;
+  const { amountCents } = req.body; // amountCents is now KOBO
   const userId = req.user.id;
 
   if (!amountCents || amountCents <= 0) {
-    return res.status(400).json({ error: 'Valid amountCents is required.' });
+    return res.status(400).json({ error: 'Valid amountCents (in Kobo) is required.' });
   }
 
-  const amountKobo = Math.round((amountCents / 100) * USD_NGN_RATE * 100);
+  // Paystack expects Kobo, which is exactly what amountCents is now.
+  const amountKobo = amountCents; 
   const txRef = `paystack_${userId}_${Date.now()}`;
 
   try {
@@ -236,7 +235,7 @@ router.post('/wallet/paystack/init', authenticateToken, async (req, res) => {
       },
       body: JSON.stringify({
         email: userEmail,
-        amount: amountKobo,
+        amount: amountKobo, 
         reference: txRef,
         callback_url: `${process.env.FRONTEND_URL}/dashboard/wallet?status=success`,
       }),
@@ -309,7 +308,7 @@ router.post('/payments/paystack/webhook', async (req, res) => {
       );
 
       await client.query('COMMIT');
-      console.log(`[PAYSTACK SUCCESS] Credited user ${userId} with ${intent.amount_cents} cents.`);
+      console.log(`[PAYSTACK SUCCESS] Credited user ${userId} with ${intent.amount_cents} Kobo.`);
       return res.status(200).send('OK');
 
     } catch (err) {
@@ -325,29 +324,24 @@ router.post('/payments/paystack/webhook', async (req, res) => {
 });
 
 // ==========================================
-// WALLET ROUTES (Restored & Fixed)
+// WALLET ROUTES
 // ==========================================
 router.get('/wallet/balance', authenticateToken, async (req, res) => {
   try {
-    console.log(`[BALANCE REQUEST] Fetching for user: ${req.user.id}`);
-    
     const { rows } = await db.query(
       `SELECT balance_cents FROM public.users WHERE id = $1;`,
       [req.user.id]
     );
 
     if (rows.length === 0) {
-      console.warn(`[BALANCE ERROR] User not found: ${req.user.id}`);
       return res.status(404).json({ error: 'User not found.' });
     }
 
     const balanceCents = parseInt(rows[0].balance_cents, 10);
-    console.log(`[BALANCE SUCCESS] User: ${req.user.id} | Balance: ${balanceCents}`);
 
     return res.status(200).json({
       success: true,
       balanceCents,
-      balanceUSD: (balanceCents / 100).toFixed(2)
     });
   } catch (err) {
     console.error('[BALANCE DB ERROR]:', err.message);

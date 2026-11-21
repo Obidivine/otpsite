@@ -19,7 +19,8 @@ export function CountryCard({
   isRenting,
   disabled,
 }: CountryCardProps) {
-  const priceUSD = `$${(item.price_cents / 100).toFixed(2)}`;
+  // Format as Naira (price_cents is now Kobo)
+  const priceNaira = `₦${(item.price_cents / 100).toLocaleString('en-NG')}`;
   const successRate = Number(item.success_rate).toFixed(0);
   const outOfStock = item.stock_count <= 0;
 
@@ -35,7 +36,7 @@ export function CountryCard({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-bold">{priceUSD}</div>
+            <div className="text-xl font-bold">{priceNaira}</div>
             <div className="text-xs text-slate-500">per number</div>
           </div>
         </div>

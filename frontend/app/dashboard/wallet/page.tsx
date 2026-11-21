@@ -36,7 +36,7 @@ import { DollarSign, ArrowDownCircle, ArrowUpCircle, Wallet } from 'lucide-react
 import { EmptyState } from '@/components/EmptyState';
 import { Receipt } from 'lucide-react';
 
-const PRESET_AMOUNTS = [300, 500, 1000, 2000]; // cents: $3, $5, $10, $20
+const PRESET_AMOUNTS = [450000, 750000, 1500000, 3000000]; // 4,500, 7,500, 15,000, 30,000 in Kobo
 
 export default function WalletPage() {
   return (
@@ -91,21 +91,20 @@ function WalletContent() {
   }
 
   function handleCustomAmountChange(value: string) {
-    // Strip non-numeric except .
-    const cleaned = value.replace(/[^0-9.]/g, '');
-    setCustomAmount(cleaned);
-    if (cleaned) {
-      const dollars = parseFloat(cleaned);
-      if (!isNaN(dollars) && dollars > 0) {
-        setAmountCents(Math.round(dollars * 100));
-        setError(null);
-      } else {
-        setAmountCents(0);
-      }
+  const cleaned = value.replace(/[^0-9.]/g, '');
+  setCustomAmount(cleaned);
+  if (cleaned) {
+    const naira = parseFloat(cleaned);
+    if (!isNaN(naira) && naira > 0) {
+      setAmountCents(Math.round(naira * 100)); // Naira to Kobo
+      setError(null);
     } else {
       setAmountCents(0);
     }
+  } else {
+    setAmountCents(0);
   }
+}
 
   function openConfirmation() {
     setError(null);
@@ -144,7 +143,7 @@ async function handleTopup(provider: 'flutterwave' | 'paystack') {
 }
 
   const amountUSD = `$${(amountCents / 100).toFixed(2)}`;
-  const amountNGN = `₦${((amountCents / 100) * 1500).toLocaleString()}`;
+  const amountNaira = `₦${(amountCents / 100).toLocaleString('en-NG')}`;
   const isProcessing = initMutation.isPending || checkoutMutation.isPending;
 
   return (
