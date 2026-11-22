@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBalance, useTransactions, useTopupInit, useTopupCheckout, usePaystackInit } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
@@ -17,9 +18,15 @@ const PRESET_AMOUNTS = [100000, 300000, 500000, 1000000];
 
 export default function WalletPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading wallet...</div>}>
-      <WalletContent />
-    </Suspense>
+    <ProtectedRoute>
+      <Suspense fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <div className="text-slate-500">Loading wallet...</div>
+        </div>
+      }>
+        <WalletContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }
 

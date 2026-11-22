@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { SessionCard } from '@/components/SessionCard';
 import { EmptyState } from '@/components/EmptyState';
 import { useUserSessions } from '@/lib/queries';
@@ -12,9 +13,20 @@ type Filter = 'ALL' | 'ACTIVE' | 'COMPLETED' | 'EXPIRED';
 
 export default function HistoryPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center">Loading history...</div>}>
-      <HistoryContent />
-    </Suspense>
+    <ProtectedRoute>
+      <Suspense fallback={
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-48" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-32 rounded-xl" />
+            ))}
+          </div>
+        </div>
+      }>
+        <HistoryContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useRouter } from 'next/navigation';
 import { ServiceSelector } from '@/components/ServiceSelector';
 import { CountryCard } from '@/components/CountryCard';
@@ -13,7 +14,11 @@ import { EmptyState } from '@/components/EmptyState';
 import { Package } from 'lucide-react';
 
 export default function RentPage() {
-  return <RentContent />;
+  return (
+    <ProtectedRoute>
+      <RentContent />
+    </ProtectedRoute>
+  );
 }
 
 function RentContent() {
