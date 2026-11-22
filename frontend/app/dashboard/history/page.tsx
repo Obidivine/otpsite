@@ -78,4 +78,4 @@ function HistoryContent() {
       )}
     </div>
   );
-}  
+}
