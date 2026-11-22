@@ -2,6 +2,7 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { BalanceCard } from '@/components/BalanceCard';
 import { SessionCard } from '@/components/SessionCard';
 import { useUserSessions } from '@/lib/queries';
@@ -13,11 +14,14 @@ import { EmptyState } from '@/components/EmptyState';
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center">Loading dashboard...</div>}>
-      <DashboardContent />
-    </Suspense>
+    <ProtectedRoute> {/* <--- WRAP HERE */}
+      <Suspense fallback={<div className="p-8 text-center">Loading dashboard...</div>}>
+        <DashboardContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }
+
 
 function DashboardContent() {
   const { data, isLoading } = useUserSessions();
