@@ -211,4 +211,4 @@ function WalletContent() {
       </Dialog>
     </div>
   );
-}
+}   
