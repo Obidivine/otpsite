@@ -134,7 +134,6 @@ function RentContent() {
                 item={item}
                 onRent={handleRent}
                 isRenting={rentingCountry === item.country_code}
-                disabled={balanceCents < item.price_cents}
               />
             ))}
           </div>
