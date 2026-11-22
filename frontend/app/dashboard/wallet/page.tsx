@@ -1,7 +1,7 @@
 // frontend/app/dashboard/wallet/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Header } from '@/components/Header';
@@ -40,7 +40,15 @@ import { Receipt } from 'lucide-react';
 const PRESET_AMOUNTS = [100000, 300000, 500000, 1000000]; 
 
 export default function WalletPage() {
-  return <WalletContent /> ;
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-slate-500">Loading wallet...</div>
+      </div>
+    }>
+      <WalletContent />
+    </Suspense>
+  );
 }
 
 function WalletContent() {
