@@ -46,15 +46,15 @@ function RentContent() {
 
         if (balanceCents < item.price_cents) {
       toast.error(
-        `Insufficient balance. Top up your wallet to continue.`,
-        {
-          description: `You need $${(item.price_cents / 100).toFixed(2)} but have $${(balanceCents / 100).toFixed(2)}.`,
-          action: {
-            label: 'Top Up',
-            onClick: () => router.push('/dashboard/wallet'),
-          },
-        }
-      );
+  `Insufficient balance. Top up your wallet to continue.`,
+  {
+    description: `You need ₦${(item.price_cents / 100).toLocaleString('en-NG')} but have ₦${(balanceCents / 100).toLocaleString('en-NG')}.`,
+    action: {
+      label: 'Top Up',
+      onClick: () => router.push('/dashboard/wallet'),
+    },
+  }
+);
       return;
     }
 
