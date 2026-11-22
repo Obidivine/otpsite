@@ -36,8 +36,8 @@ import { ArrowDownCircle, ArrowUpCircle, Wallet, Banknote } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { Receipt } from 'lucide-react';
 
-// Presets in Kobo: ₦4,500, ₦7,500, ₦15,000, ₦30,000
-const PRESET_AMOUNTS = [450000, 750000, 1500000, 3000000]; 
+// Presets in Kobo: ₦1,000, ₦3,000, ₦5,000, ₦10,000
+const PRESET_AMOUNTS = [100000, 300000, 500000, 1000000]; 
 
 export default function WalletPage() {
   return (
