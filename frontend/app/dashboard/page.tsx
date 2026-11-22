@@ -1,9 +1,8 @@
 // frontend/app/dashboard/page.tsx
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Header } from '@/components/Header';
 import { BalanceCard } from '@/components/BalanceCard';
 import { SessionCard } from '@/components/SessionCard';
 import { useUserSessions } from '@/lib/queries';
@@ -13,19 +12,32 @@ import { Phone, History } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/EmptyState';
 
-
-
 export default function DashboardPage() {
-  return ;
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-48" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-32 rounded-xl" />
+          <Skeleton className="h-32 rounded-xl" />
+          <Skeleton className="h-32 rounded-xl" />
+        </div>
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
+  );
 }
 
 function DashboardContent() {
   const { data, isLoading } = useUserSessions();
   const sessions = data?.sessions ?? [];
- const now = Date.now();
-const activeSessions = sessions.filter(
-  (s) => s.status === 'ACTIVE' && s.expiresAt > now
-);
+  const now = Date.now();
+  
+  const activeSessions = sessions.filter(
+    (s) => s.status === 'ACTIVE' && s.expiresAt > now
+  );
   const recentSessions = sessions.slice(0, 5);
 
   return (
@@ -85,20 +97,20 @@ const activeSessions = sessions.filter(
         </div>
 
         {isLoading ? (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    {[1, 2].map((i) => (
-      <Skeleton key={i} className="h-32 rounded-xl" />
-    ))}
-  </div>
-) : activeSessions.length === 0 ? (
-  <EmptyState
-    icon={Phone}
-    title="No active sessions"
-    description="Rent a phone number to start receiving verification codes. Sessions appear here while they're active."
-    actionLabel="Rent Your First Number"
-    actionHref="/dashboard/rent"
-  />
-) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2].map((i) => (
+              <Skeleton key={i} className="h-32 rounded-xl" />
+            ))}
+          </div>
+        ) : activeSessions.length === 0 ? (
+          <EmptyState
+            icon={Phone}
+            title="No active sessions"
+            description="Rent a phone number to start receiving verification codes. Sessions appear here while they're active."
+            actionLabel="Rent Your First Number"
+            actionHref="/dashboard/rent"
+          />
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {activeSessions.map((session) => (
               <SessionCard key={session.id} session={session} />
