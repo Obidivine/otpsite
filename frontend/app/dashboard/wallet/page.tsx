@@ -40,16 +40,7 @@ import { Receipt } from 'lucide-react';
 const PRESET_AMOUNTS = [100000, 300000, 500000, 1000000]; 
 
 export default function WalletPage() {
-  return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50">
-        <Header />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <WalletContent />
-        </main>
-      </div>
-    </ProtectedRoute>
-  );
+  return <WalletContent /> ;
 }
 
 function WalletContent() {

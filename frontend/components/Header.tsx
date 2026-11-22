@@ -1,82 +1,62 @@
 // frontend/components/Header.tsx
 'use client';
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { useBalance } from '@/lib/queries';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SupportLinks } from '@/components/SupportLinks';
+import Link from 'next/link';
 
-export function Header() {
-  const router = useRouter();
+export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const token = useAuthStore((s) => s.token);
 
-  // This works perfectly now that queries.ts accepts the options object
   const { data: balanceData } = useBalance({
     enabled: hasHydrated && !!token,
   });
 
-  function handleLogout() {
-    logout();
-    router.push('/login');
-  }
-
-    const balanceNaira = balanceData
+  const balanceNaira = balanceData
     ? `₦${(balanceData.balanceCents / 100).toLocaleString('en-NG')}`
     : '₦—';
 
+  const initials = user?.email ? user.email.substring(0, 2).toUpperCase() : 'U';
+
   return (
-    <header className="border-b bg-white sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="font-bold text-lg">
-              OTP Reseller
-            </Link>
-            <nav className="hidden md:flex items-center gap-4 text-sm">
-              <Link href="/dashboard" className="text-slate-600 hover:text-slate-900">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/rent" className="text-slate-600 hover:text-slate-900">
-                Rent
-              </Link>
-              <Link href="/dashboard/wallet" className="text-slate-600 hover:text-slate-900">
-                Wallet
-              </Link>
-            </nav>
+    <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6">
+      {/* Mobile Menu Button */}
+      <div className="flex items-center gap-4 md:hidden">
+        <button onClick={onMenuClick} className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+          <Menu className="h-5 w-5" />
+        </button>
+        <span className="font-bold text-lg">OTP Reseller</span>
+      </div>
+
+      {/* Desktop Spacer */}
+      <div className="hidden md:block" />
+
+      {/* Right Side: Balance & Avatar */}
+      <div className="flex items-center gap-4">
+        <Link
+          href="/dashboard/wallet"
+          className="text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200"
+        >
+          <span className="hidden sm:inline text-slate-500">Balance:</span>{' '}
+          {balanceData ? (
+            <span className="text-slate-900 font-bold">{balanceNaira}</span>
+          ) : (
+            <Skeleton className="h-4 w-12 inline-block" />
+          )}
+        </Link>
+
+        {/* Desktop Avatar */}
+        <div className="hidden md:flex items-center gap-3 pl-4 border-l border-slate-200">
+          <div className="text-right hidden lg:block">
+            <p className="text-xs text-slate-500">Logged in as</p>
+            <p className="text-sm font-medium truncate max-w-[150px]">{user?.email}</p>
           </div>
-
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard/wallet"
-              className="text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1.5"
-            >
-              <span className="hidden sm:inline">Balance:</span>{' '}
-              {balanceData ? (
-				<span className="text-slate-900">{balanceNaira}</span>
-              ) : (
-                <Skeleton className="h-4 w-12 inline-block" />
-              )}
-            </Link>
-            
-            <span className="hidden sm:inline text-sm text-slate-500">
-              {user?.email}
-            </span>
-
-            {/* SUPPORT LINKS */}
-            <div className="border-l pl-4 ml-2 hidden block">
-              <SupportLinks />
-            </div>
-
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-            </Button>
+          <div className="h-9 w-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
+            {initials}
           </div>
         </div>
       </div>

@@ -14,16 +14,7 @@ import { Button } from '@/components/ui/button';
 type Filter = 'ALL' | 'ACTIVE' | 'COMPLETED' | 'EXPIRED';
 
 export default function HistoryPage() {
-  return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50">
-        <Header />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <HistoryContent />
-        </main>
-      </div>
-    </ProtectedRoute>
-  );
+  return <HistoryContent />;
 }
 
 function HistoryContent() {
