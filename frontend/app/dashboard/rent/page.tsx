@@ -3,8 +3,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Header } from '@/components/Header';
 import { ServiceSelector } from '@/components/ServiceSelector';
 import { CountryCard } from '@/components/CountryCard';
 import { useCatalog, useRentNumber, useBalance } from '@/lib/queries';
@@ -35,17 +33,17 @@ function RentContent() {
   async function handleRent(item: CatalogItem) {
     setError(null);
 
-        if (balanceCents < item.price_cents) {
+    if (balanceCents < item.price_cents) {
       toast.error(
-  `Insufficient balance. Top up your wallet to continue.`,
-  {
-    description: `You need ₦${(item.price_cents / 100).toLocaleString('en-NG')} but have ₦${(balanceCents / 100).toLocaleString('en-NG')}.`,
-    action: {
-      label: 'Top Up',
-      onClick: () => router.push('/dashboard/wallet'),
-    },
-  }
-);
+        `Insufficient balance. Top up your wallet to continue.`,
+        {
+          description: `You need ₦${(item.price_cents / 100).toLocaleString('en-NG')} but have ₦${(balanceCents / 100).toLocaleString('en-NG')}.`,
+          action: {
+            label: 'Top Up',
+            onClick: () => router.push('/dashboard/wallet'),
+          },
+        }
+      );
       return;
     }
 
@@ -57,7 +55,7 @@ function RentContent() {
         country: item.country_code,
       });
 
-            toast.success(`Number rented! ${result.phoneNumber}`);
+      toast.success(`Number rented! ${result.phoneNumber}`);
       router.push(
         `/dashboard/session/${encodeURIComponent(result.phoneNumber)}`
       );
@@ -106,18 +104,18 @@ function RentContent() {
         </h2>
 
         {isLoading ? (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    {[1, 2, 3, 4, 5, 6].map((i) => (
-      <Skeleton key={i} className="h-48 rounded-xl" />
-    ))}
-  </div>
-) : catalog.length === 0 ? (
-  <EmptyState
-    icon={Package}
-    title="No numbers available"
-    description={`We don't have any numbers for ${service} right now. Try another service from the dropdown above.`}
-  />
-) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-48 rounded-xl" />
+            ))}
+          </div>
+        ) : catalog.length === 0 ? (
+          <EmptyState
+            icon={Package}
+            title="No numbers available"
+            description={`We don't have any numbers for ${service} right now. Try another service from the dropdown above.`}
+          />
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {catalog.map((item) => (
               <CountryCard
