@@ -40,43 +40,78 @@ export default function LandingPage() {
   );
 }
 
+// Replace the Hero() function in frontend/app/page.tsx with this:
+
 function Hero() {
   return (
-    <section className="pt-16 pb-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium mb-6">
-          <Zap className="h-3.5 w-3.5" />
-          Instant delivery · 98% success rate
+    <section className="pt-24 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Side: Text */}
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold mb-6">
+              <Zap className="h-3.5 w-3.5" />
+              Instant delivery · 98% success rate
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]">
+              Foreign phone numbers <br />
+              <span className="text-blue-600">for OTP verification.</span>
+            </h1>
+
+            <p className="mt-6 text-lg text-slate-600 max-w-lg mx-auto lg:mx-0">
+              Verify your WhatsApp, Telegram, Instagram, or TikTok account with a
+              US, UK, or European number. No SIM card needed. No roaming. Just fast,
+              reliable delivery.
+            </p>
+
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+              <Link href="/signup">
+                <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base shadow-lg hover:shadow-xl transition-all">
+                  Get Started — From ₦1,000
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-base">
+                  Sign In
+                </Button>
+              </Link>
+            </div>
+            
+            <p className="mt-4 text-xs text-slate-500 font-medium">
+              No credit card required to create an account
+            </p>
+          </div>
+
+          {/* Right Side: Visual Mockup */}
+          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-100 to-slate-200 rounded-3xl blur-2xl opacity-50"></div>
+            <div className="relative bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden transform lg:rotate-2 hover:rotate-0 transition-transform duration-500">
+              {/* Fake Browser Header */}
+              <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                <div className="ml-4 bg-white border border-slate-200 rounded-md px-3 py-1 text-xs text-slate-400 w-48 text-center">otp360.store</div>
+              </div>
+              {/* Fake App Content */}
+              <div className="p-6 bg-slate-50">
+                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 mb-4">
+                    <p className="text-xs text-slate-500 mb-1">Your temporary number</p>
+                    <p className="text-xl font-mono font-bold text-slate-900">+1 (415) 555-0198</p>
+                 </div>
+                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
+                    <p className="text-xs text-slate-500 mb-3">Waiting for SMS...</p>
+                    <div className="flex justify-center gap-1 mb-4">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"></div>
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce delay-100"></div>
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce delay-200"></div>
+                    </div>
+                 </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-900 leading-tight">
-          Foreign phone numbers
-          <br />
-          <span className="text-blue-600">for OTP verification</span>
-        </h1>
-
-        <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto">
-          Verify your WhatsApp, Telegram, Instagram, or TikTok account with a
-          US, UK, or European number. No SIM card needed. No roaming. Just fast,
-          reliable delivery.
-        </p>
-
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link href="/signup">
-            <Button size="lg" className="w-full sm:w-auto">
-              Get Started — From ₦1,000
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button size="lg" variant="outline" className="w-full sm:w-auto">
-              Sign In
-            </Button>
-          </Link>
-        </div>
-
-        <p className="mt-6 text-xs text-slate-500">
-          No credit card required to create an account
-        </p>
       </div>
     </section>
   );
