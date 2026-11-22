@@ -1,10 +1,9 @@
-// frontend/app/dashboard/layout.tsx
 'use client';
 
 import { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
-import { ProtectedRoute } from '@/components/ProtectedRoute'; // <-- IMPORTANT
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -13,7 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <ProtectedRoute>
       <div className="min-h-screen bg-slate-50 flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:block w-64 fixed inset-y-0 z-50">
+        <aside className="hidden md:block w-64 fixed inset-y-0 z-40 border-r bg-white">
           <Sidebar />
         </aside>
 

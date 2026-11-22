@@ -1,4 +1,3 @@
-// frontend/app/dashboard/page.tsx
 'use client';
 
 import { Suspense } from 'react';
@@ -14,17 +13,7 @@ import { EmptyState } from '@/components/EmptyState';
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-32 rounded-xl" />
-          <Skeleton className="h-32 rounded-xl" />
-          <Skeleton className="h-32 rounded-xl" />
-        </div>
-        <Skeleton className="h-64 rounded-xl" />
-      </div>
-    }>
+    <Suspense fallback={<div className="p-8 text-center">Loading dashboard...</div>}>
       <DashboardContent />
     </Suspense>
   );
@@ -57,29 +46,21 @@ function DashboardContent() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
-              Active Sessions
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Active Sessions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{activeSessions.length}</div>
-            <p className="text-xs text-slate-500 mt-1">
-              Numbers currently rented
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Numbers currently rented</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
-              Total Sessions
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Total Sessions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{sessions.length}</div>
-            <p className="text-xs text-slate-500 mt-1">
-              All-time rentals
-            </p>
+            <p className="text-xs text-slate-500 mt-1">All-time rentals</p>
           </CardContent>
         </Card>
       </div>
@@ -87,20 +68,14 @@ function DashboardContent() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Active Sessions</h2>
-          <Link
-            href="/dashboard/history"
-            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-          >
-            <History className="h-4 w-4" />
-            View all
+          <Link href="/dashboard/history" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+            <History className="h-4 w-4" /> View all
           </Link>
         </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[1, 2].map((i) => (
-              <Skeleton key={i} className="h-32 rounded-xl" />
-            ))}
+            {[1, 2].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
           </div>
         ) : activeSessions.length === 0 ? (
           <EmptyState
@@ -118,20 +93,6 @@ function DashboardContent() {
           </div>
         )}
       </div>
-
-      {recentSessions.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Recent Sessions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {recentSessions
-              .filter((s) => s.status !== 'ACTIVE')
-              .slice(0, 4)
-              .map((session) => (
-                <SessionCard key={session.id} session={session} />
-              ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

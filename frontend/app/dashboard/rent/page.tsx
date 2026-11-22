@@ -1,4 +1,3 @@
-// frontend/app/dashboard/rent/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -32,39 +31,21 @@ function RentContent() {
 
   async function handleRent(item: CatalogItem) {
     setError(null);
-
     if (balanceCents < item.price_cents) {
-      toast.error(
-        `Insufficient balance. Top up your wallet to continue.`,
-        {
-          description: `You need ₦${(item.price_cents / 100).toLocaleString('en-NG')} but have ₦${(balanceCents / 100).toLocaleString('en-NG')}.`,
-          action: {
-            label: 'Top Up',
-            onClick: () => router.push('/dashboard/wallet'),
-          },
-        }
-      );
+      toast.error(`Insufficient balance. Top up your wallet to continue.`, {
+        description: `You need ₦${(item.price_cents / 100).toLocaleString('en-NG')} but have ₦${(balanceCents / 100).toLocaleString('en-NG')}.`,
+        action: { label: 'Top Up', onClick: () => router.push('/dashboard/wallet') },
+      });
       return;
     }
 
     setRentingCountry(item.country_code);
-
     try {
-      const result = await rentMutation.mutateAsync({
-        service,
-        country: item.country_code,
-      });
-
+      const result = await rentMutation.mutateAsync({ service, country: item.country_code });
       toast.success(`Number rented! ${result.phoneNumber}`);
-      router.push(
-        `/dashboard/session/${encodeURIComponent(result.phoneNumber)}`
-      );
+      router.push(`/dashboard/session/${encodeURIComponent(result.phoneNumber)}`);
     } catch (err: any) {
-      const message =
-        err.response?.data?.error ||
-        err.response?.data?.details ||
-        err.message ||
-        'Failed to rent number. Please try again.';
+      const message = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to rent number.';
       toast.error(message);
     } finally {
       setRentingCountry(null);
@@ -75,9 +56,7 @@ function RentContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold mb-2">Rent a Number</h1>
-        <p className="text-slate-600">
-          Choose a service and country to receive a foreign phone number for OTP verification.
-        </p>
+        <p className="text-slate-600">Choose a service and country to receive a foreign phone number.</p>
       </div>
 
       <Card>
@@ -87,43 +66,24 @@ function RentContent() {
       </Card>
 
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-4 flex items-start justify-between gap-3">
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-4 flex justify-between">
           <span>{error}</span>
-          <button
-            onClick={() => setError(null)}
-            className="text-red-400 hover:text-red-600 font-bold"
-          >
-            ×
-          </button>
+          <button onClick={() => setError(null)} className="font-bold">×</button>
         </div>
       )}
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">
-          Available Countries — {service.charAt(0).toUpperCase() + service.slice(1)}
-        </h2>
-
+        <h2 className="text-xl font-semibold mb-4">Available Countries — {service.charAt(0).toUpperCase() + service.slice(1)}</h2>
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-48 rounded-xl" />
-            ))}
+            {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
           </div>
         ) : catalog.length === 0 ? (
-          <EmptyState
-            icon={Package}
-            title="No numbers available"
-            description={`We don't have any numbers for ${service} right now. Try another service from the dropdown above.`}
-          />
+          <EmptyState icon={Package} title="No numbers available" description={`We don't have any numbers for ${service} right now.`} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {catalog.map((item) => (
-              <CountryCard
-                key={item.country_code}
-                item={item}
-                onRent={handleRent}
-                isRenting={rentingCountry === item.country_code}
-              />
+              <CountryCard key={item.country_code} item={item} onRent={handleRent} isRenting={rentingCountry === item.country_code} />
             ))}
           </div>
         )}
