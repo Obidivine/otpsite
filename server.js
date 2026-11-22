@@ -7,6 +7,7 @@ const authRoutes = require('./src/routes/auth.routes');
 const sessionRoutes = require('./src/routes/session.routes');
 const catalogRoutes = require('./src/routes/catalog.routes');
 const paymentRoutes = require('./src/routes/payment.routes');
+const webhookRoutes = require('./src/routes/webhook.routes');
 
 const app = express();
 app.set('trust proxy', 1); // Trust Railway's proxy for rate limiting
@@ -40,7 +41,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/sessions', sessionRoutes);
 app.use('/api/v1/catalog', catalogRoutes);
 app.use('/api/v1', paymentRoutes);
-
+app.use('/api/v1/webhooks', webhookRoutes);
 // Healthcheck (public)
 app.get('/health', (req, res) => {
   return res.status(200).json({ status: 'OK' });

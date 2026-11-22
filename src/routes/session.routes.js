@@ -132,7 +132,8 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: You do not own this session.' });
     }
 
-    if (session.status === 'EXPIRED' || session.status === 'COMPLETED') {
+    // If it's already expired or completed, just return it
+    if (session.status === 'EXPIRED' || session.status === 'COMPLETED' || session.status === 'CANCELLED') {
       return res.status(200).json(session);
     }
 
@@ -155,28 +156,35 @@ router.get('/:phoneNumber', authenticateToken, async (req, res) => {
           };
           return res.status(200).json(session);
         }
-
-        if (pollResult?.expired) {
-          await telecomService.cancelOrder(session.providerOrderId, session.provider);
-        }
       } catch (pollError) {
         console.error('[POLL ERROR]:', pollError.message);
       }
     }
 
+    // Handle Expiry
     if (Date.now() > session.expiresAt && session.status === 'ACTIVE') {
-      const refunded = await billingService.refundExpiredSession(session.id, req.user.id);
-
+      // 1. Mark as EXPIRED immediately to prevent double refunds
+      await sessionStore.updateSessionStatus(session.phoneNumber, 'EXPIRED');
+      
+      // 2. Try to cancel with SMSPool
       if (session.providerOrderId) {
         try {
           await telecomService.cancelOrder(session.providerOrderId, session.provider);
         } catch (cancelErr) {
-          console.error('[CANCEL ERROR]:', cancelErr.message);
+          console.error('[SMSPOOL CANCEL ERROR]:', cancelErr.message);
         }
       }
 
+      // 3. Issue Refund (even if SMSPool cancellation failed)
+      try {
+        await billingService.refundExpiredSession(session.id, req.user.id);
+        console.log(`[REFUND SUCCESS] Refunded user ${req.user.id} for session ${session.id}`);
+      } catch (refundErr) {
+        console.error('[REFUND ERROR]:', refundErr.message);
+      }
+
       session.status = 'EXPIRED';
-      return res.status(410).json({ error: 'Session has expired.', refundIssued: refunded });
+      return res.status(410).json({ error: 'Session has expired.', refundIssued: true });
     }
 
     return res.status(200).json(session);
