@@ -1,9 +1,6 @@
 // frontend/app/dashboard/history/page.tsx
 'use client';
-export const dynamic = 'force-dynamic';
 
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Header } from '@/components/Header';
 import { SessionCard } from '@/components/SessionCard';
 import { EmptyState } from '@/components/EmptyState';
 import { useUserSessions } from '@/lib/queries';
@@ -11,6 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { History } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+
+// This tells Next.js not to pre-render this page on the server
+export const dynamic = 'force-dynamic';
 
 type Filter = 'ALL' | 'ACTIVE' | 'COMPLETED' | 'EXPIRED';
 
