@@ -12,18 +12,15 @@ class CatalogService {
         p.price_cents,
         p.stock_count,
         p.success_rate,
-        p.is_available
+        p.is_available,
+        COALESCE(p.priority, 0) AS priority -- Ensure it doesn't crash if NULL
       FROM public.pricing p
       JOIN public.countries c ON p.country_code = c.code
       WHERE p.service_id = $1
         AND c.is_active = TRUE
         AND p.is_available = TRUE
         AND p.stock_count > 0
-<<<<<<< HEAD
-        ORDER BY p.priority DESC, p.price_cents ASC;
-=======
-      ORDER BY p.priority DESC, p.price_cents ASC;
->>>>>>> 64f7225cd35ef96eac4da8546a5a2638fb8bc3ce
+      ORDER BY COALESCE(p.priority, 0) DESC, p.price_cents ASC;
     `;
     const { rows } = await db.query(query, [serviceId.toLowerCase()]);
 
@@ -39,11 +36,8 @@ class CatalogService {
     }));
   }
 
-  /**
-   * Fetch price in USD cents for a specific country + service combo
-   * Returns null if unavailable / out of stock
-   */
   async getPriceForService(countryCode, serviceId) {
+    // ... (keep this exactly the same)
     const query = `
       SELECT price_cents, is_available, stock_count
       FROM public.pricing
