@@ -9,7 +9,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-[#F7F9FC] flex text-slate-900">
       {/* We wrap the Sidebar in Suspense because it uses usePathname() */}
       <aside className="hidden md:block w-64 fixed inset-y-0 z-40 border-r bg-white">
         <Suspense fallback={<div className="p-4 text-sm text-slate-500">Loading menu...</div>}>

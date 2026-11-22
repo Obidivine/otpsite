@@ -32,8 +32,12 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         <span className="font-bold text-lg">OTP Reseller</span>
       </div>
 
-      {/* Desktop Spacer */}
-      <div className="hidden md:block" />
+      {/* Brand Name */}
+<div className="hidden md:block">
+  <Link href="/dashboard" className="text-xl font-black text-slate-900 tracking-tight hover:opacity-80 transition-opacity">
+    OTP360<span className="text-blue-600">.store</span>
+  </Link>
+</div>
 
       {/* Right Side: Balance & Avatar */}
       <div className="flex items-center gap-4">
