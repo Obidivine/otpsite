@@ -1,6 +1,7 @@
 // frontend/app/dashboard/history/page.tsx
 'use client';
 
+import { Suspense } from 'react';
 import { SessionCard } from '@/components/SessionCard';
 import { EmptyState } from '@/components/EmptyState';
 import { useUserSessions } from '@/lib/queries';
@@ -9,13 +10,23 @@ import { History } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-// This tells Next.js not to pre-render this page on the server
-export const dynamic = 'force-dynamic';
-
 type Filter = 'ALL' | 'ACTIVE' | 'COMPLETED' | 'EXPIRED';
 
 export default function HistoryPage() {
-  return <HistoryContent />;
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-48" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    }>
+      <HistoryContent />
+    </Suspense>
+  );
 }
 
 function HistoryContent() {
