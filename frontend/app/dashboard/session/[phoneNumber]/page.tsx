@@ -181,7 +181,7 @@ function SessionContent({ phoneNumber }: { phoneNumber: string }) {
           <div className="text-xs text-slate-500 mt-3">
             Service:{' '}
             <span className="capitalize font-medium">{session.service}</span> ·
-            Cost: ${(session.costCents / 100).toFixed(2)}
+            Cost: ₦{(session.costCents / 100).toLocaleString('en-NG')}
           </div>
         </CardContent>
       </Card>
@@ -247,9 +247,9 @@ function SessionContent({ phoneNumber }: { phoneNumber: string }) {
             <AlertCircle className="h-8 w-8 text-amber-600 mx-auto" />
             <p className="font-medium text-amber-900">Session expired</p>
             <p className="text-sm text-amber-800">
-              No code was received in time. Your $
-              {(session.costCents / 100).toFixed(2)} has been refunded.
-            </p>
+  No code was received in time. Your ₦
+  {(session.costCents / 100).toLocaleString('en-NG')} has been refunded.
+</p>
             <Link href="/dashboard/rent">
               <Button variant="outline" className="mt-2">
                 Rent Another Number
