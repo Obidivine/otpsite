@@ -86,7 +86,7 @@ export function SessionCard({ session }: SessionCardProps) {
             )}
 
             <div className="text-xs text-slate-400 mt-1">
-              ${(session.costCents / 100).toFixed(2)} ·{' '}
+              ₦{(session.costCents / 100).toLocaleString('en-NG')} ·{' '}
               {new Date(session.createdAt).toLocaleString()}
             </div>
           </div>
