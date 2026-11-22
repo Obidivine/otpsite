@@ -1,11 +1,12 @@
 // frontend/components/Header.tsx
 'use client';
 
+import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
 import { useBalance } from '@/lib/queries';
 import { Menu } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/link';
+import { SupportLinks } from '@/components/SupportLinks';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const user = useAuthStore((s) => s.user);
@@ -23,27 +24,29 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const initials = user?.email ? user.email.substring(0, 2).toUpperCase() : 'U';
 
   return (
-    <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6">
-      {/* Mobile Menu Button */}
-      <div className="flex items-center gap-4 md:hidden">
-        <button onClick={onMenuClick} className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+    <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
+      {/* Left side: Mobile Menu Button & Brand Name */}
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={onMenuClick} 
+          className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg md:hidden"
+        >
           <Menu className="h-5 w-5" />
         </button>
-        <span className="font-bold text-lg">OTP Reseller</span>
+        
+        {/* Desktop Brand Name */}
+        <div className="hidden md:block">
+          <Link href="/dashboard" className="text-xl font-black text-slate-900 tracking-tight hover:opacity-80 transition-opacity">
+            OTP360<span className="text-blue-600">.store</span>
+          </Link>
+        </div>
       </div>
 
-      {/* Brand Name */}
-<div className="hidden md:block">
-  <Link href="/dashboard" className="text-xl font-black text-slate-900 tracking-tight hover:opacity-80 transition-opacity">
-    OTP360<span className="text-blue-600">.store</span>
-  </Link>
-</div>
-
-      {/* Right Side: Balance & Avatar */}
+      {/* Right side: Balance & Profile */}
       <div className="flex items-center gap-4">
         <Link
           href="/dashboard/wallet"
-          className="text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200"
+          className="text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 transition-colors hover:bg-slate-100"
         >
           <span className="hidden sm:inline text-slate-500">Balance:</span>{' '}
           {balanceData ? (
@@ -59,7 +62,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             <p className="text-xs text-slate-500">Logged in as</p>
             <p className="text-sm font-medium truncate max-w-[150px]">{user?.email}</p>
           </div>
-          <div className="h-9 w-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
+          <div className="h-9 w-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-sm">
             {initials}
           </div>
         </div>
