@@ -19,22 +19,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function SessionPage() {
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50">
-        <Header />
-        <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Suspense
-            fallback={
-              <Card>
-                <CardContent className="p-8 text-center text-slate-500">
-                  Loading session...
-                </CardContent>
-              </Card>
-            }
-          >
-            <SessionLoader />
-          </Suspense>
-        </main>
-      </div>
+      <Suspense
+        fallback={
+          <Card>
+            <CardContent className="p-8 text-center text-slate-500">
+              Loading session...
+            </CardContent>
+          </Card>
+        }
+      >
+        <SessionLoader />
+      </Suspense>
     </ProtectedRoute>
   );
 }
