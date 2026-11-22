@@ -60,7 +60,7 @@ function WalletContent() {
   const { data: balanceData, refetch: refetchBalance } = useBalance();
   const { data: txData, refetch: refetchTx } = useTransactions();
 
-  const [amountCents, setAmountCents] = useState<number>(450000); // Default to ₦4,500
+  const PRESET_AMOUNTS = [100000, 300000, 500000, 1000000]; // ₦1,000, ₦3,000, ₦5,000, ₦10,000 in Kobo
   const [customAmount, setCustomAmount] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
