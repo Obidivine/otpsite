@@ -66,14 +66,14 @@ const transporter = nodemailer.createTransport({
 });
 
 // 1. REQUEST PASSWORD RESET
+
+
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
 
   try {
     const userRes = await db.query('SELECT id FROM public.users WHERE email = $1', [email]);
     
-    // SECURITY TIP: Always return 200 success even if email doesn't exist! 
-    // This prevents hackers from testing which emails are registered on your site.
     if (userRes.rows.length === 0) {
       return res.status(200).json({ success: true, message: 'If that email exists, a reset link has been sent.' });
     }
@@ -82,26 +82,47 @@ router.post('/forgot-password', async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Save to DB (delete old ones for this user first)
     await db.query('DELETE FROM public.password_resets WHERE user_id = $1', [userId]);
     await db.query(
       'INSERT INTO public.password_resets (user_id, token, expires_at) VALUES ($1, $2, $3)',
       [userId, token, expiresAt]
     );
 
-    // Send Email
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     
+    // Styled HTML Email Template
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px; background-color: #ffffff;">
+        <h2 style="color: #0f172a; margin-bottom: 20px;">Reset your OTP360 Password</h2>
+        <p style="color: #475569; font-size: 16px; line-height: 1.5;">Hello,</p>
+        <p style="color: #475569; font-size: 16px; line-height: 1.5;">
+          We received a request to reset the password for your OTP360 account. Click the button below to choose a new password:
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetLink}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+            Reset My Password
+          </a>
+        </div>
+
+        <p style="color: #475569; font-size: 14px; line-height: 1.5;">
+          This link is valid for <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.
+        </p>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+          <p style="color: #94a3b8; font-size: 12px; line-height: 1.5;">
+            <strong>Didn't see this email in your inbox?</strong><br>
+            Please check your <strong>Spam or Junk folder</strong>. To ensure future emails arrive safely, mark this message as "Not Spam".
+          </p>
+        </div>
+      </div>
+    `;
+
     await transporter.sendMail({
       from: '"OTP360 Support" <otpreseller360@gmail.com>',
       to: email,
       subject: 'Reset your OTP360 Password',
-      html: `
-        <h3>Password Reset Request</h3>
-        <p>You requested to reset your password. Click the link below to set a new one:</p>
-        <a href="${resetLink}" style="padding: 10px 20px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
-        <p>This link expires in 15 minutes. If you didn't request this, you can safely ignore this email.</p>
-      `,
+      html: emailHtml,
     });
 
     return res.status(200).json({ success: true, message: 'Email sent.' });

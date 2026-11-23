@@ -39,9 +39,13 @@ export default function ForgotPasswordPage() {
         <CardContent>
           {success ? (
             <div className="text-center space-y-4">
-              <div className="p-4 bg-green-50 text-green-700 rounded-lg">
-                If an account exists for <b>{email}</b>, a reset link has been sent.
-              </div>
+              <div className="p-4 bg-green-50 text-green-700 rounded-lg text-sm">
+  If an account exists for <b>{email}</b>, a reset link has been sent. 
+  <br /><br />
+  <span className="font-semibold text-amber-700">
+    Note: Please check your Spam or Junk folder if you don't see it in your inbox.
+  </span>
+</div>
               <Link href="/login">
                 <Button className="w-full">Back to Login</Button>
               </Link>
