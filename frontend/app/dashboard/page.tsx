@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { BalanceCard } from '@/components/BalanceCard';
 import { SessionCard } from '@/components/SessionCard';
-import { useUserSessions } from '@/lib/queries';
+import { useUserSessions, useTransactions } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Phone, History } from 'lucide-react';
+import { Phone, History, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptySessionState } from '@/components/EmptySessionState';
 
@@ -24,7 +24,10 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { data, isLoading } = useUserSessions();
+  const { data: txData, isLoading: txLoading } = useTransactions();
   const sessions = data?.sessions ?? [];
+  const transactions = txData?.transactions ?? []; // <-- Add this
+  const recentTransactions = transactions.slice(0, 4); // <-- Get the 4 most recent
   const now = Date.now();
   
   const activeSessions = sessions.filter(
@@ -115,5 +118,61 @@ function DashboardContent() {
         )}
       </div>
     </div>
+	
+	      {/* --- RECENT TRANSACTIONS SECTION --- */}
+      <div className="pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-slate-900">Recent Transactions</h2>
+          <Link href="/dashboard/wallet" className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 transition-colors">
+            View Wallet
+          </Link>
+        </div>
+
+        {txLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+          </div>
+        ) : recentTransactions.length === 0 ? (
+          <div className="p-6 text-center bg-white border border-slate-200 rounded-xl">
+            <p className="text-slate-500">No transactions yet.</p>
+          </div>
+        ) : (
+          <Card className="shadow-sm border-slate-200 bg-white">
+            <CardContent className="p-0">
+              {recentTransactions.map((tx, index) => {
+                const isCredit = tx.amount_cents > 0;
+                const Icon = isCredit ? ArrowDownCircle : ArrowUpCircle;
+                const color = isCredit ? 'text-green-600' : 'text-slate-600';
+                const sign = isCredit ? '+' : '-';
+                
+                return (
+                  <div 
+                    key={tx.reference} 
+                    className={`flex items-center justify-between p-4 ${index !== recentTransactions.length - 1 ? 'border-b border-slate-100' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${isCredit ? 'bg-green-50' : 'bg-slate-50'}`}>
+                        <Icon className={`h-5 w-5 ${color}`} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold capitalize text-slate-900">
+                          {tx.type.toLowerCase()}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {new Date(tx.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`font-mono font-bold ${color}`}>
+                      {sign}₦{(Math.abs(tx.amount_cents) / 100).toLocaleString('en-NG')}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+	
   );
 }
