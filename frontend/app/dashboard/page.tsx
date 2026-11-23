@@ -25,11 +25,12 @@ export default function DashboardPage() {
 function DashboardContent() {
   const { data, isLoading } = useUserSessions();
   const { data: txData, isLoading: txLoading } = useTransactions();
-  const sessions = data?.sessions ?? [];
-  const transactions = txData?.transactions ?? []; // <-- Add this
-  const recentTransactions = transactions.slice(0, 4); // <-- Get the 4 most recent
-  const now = Date.now();
   
+  const sessions = data?.sessions ?? [];
+  const transactions = txData?.transactions ?? [];
+  const recentTransactions = transactions.slice(0, 4);
+  
+  const now = Date.now();
   const activeSessions = sessions.filter(
     (s) => s.status === 'ACTIVE' && s.expiresAt > now
   );
@@ -94,6 +95,7 @@ function DashboardContent() {
         </Card>
       </div>
 
+      {/* Active Sessions Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-slate-900">Active Sessions</h2>
@@ -107,7 +109,6 @@ function DashboardContent() {
             {[1, 2].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
           </div>
         ) : activeSessions.length === 0 ? (
-          /* Using the new illustrated empty state */
           <EmptySessionState />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -117,10 +118,9 @@ function DashboardContent() {
           </div>
         )}
       </div>
-    </div>
-	
-	      {/* --- RECENT TRANSACTIONS SECTION --- */}
-      <div className="pt-6">
+
+      {/* Recent Transactions Section */}
+      <div className="pt-2">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-slate-900">Recent Transactions</h2>
           <Link href="/dashboard/wallet" className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 transition-colors">
@@ -173,6 +173,6 @@ function DashboardContent() {
           </Card>
         )}
       </div>
-	
+    </div>
   );
 }
