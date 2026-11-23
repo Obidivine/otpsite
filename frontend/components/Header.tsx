@@ -25,8 +25,8 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
   return (
     <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
-      {/* Left side: Mobile Menu Button & Brand Name */}
-      <div className="flex items-center gap-4">
+            {/* Left side: Mobile Menu Button & Brand Name */}
+      <div className="flex items-center gap-3">
         <button 
           onClick={onMenuClick} 
           className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg md:hidden"
@@ -34,9 +34,9 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           <Menu className="h-5 w-5" />
         </button>
         
-        {/* Desktop Brand Name */}
-        <div className="hidden md:block">
-          <Link href="/dashboard" className="text-xl font-black text-slate-900 tracking-tight hover:opacity-80 transition-opacity">
+        {/* Brand Name - Shows on ALL screens now */}
+        <div>
+          <Link href="/dashboard" className="text-lg md:text-xl font-black text-slate-900 tracking-tight hover:opacity-80 transition-opacity">
             OTP360<span className="text-blue-600">.store</span>
           </Link>
         </div>
