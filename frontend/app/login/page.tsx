@@ -89,6 +89,13 @@ router.push('/dashboard');
                 autoComplete="current-password"
               />
             </div>
+			
+			<div className="flex justify-end">
+  <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+    Forgot password?
+  </Link>
+</div>
+			
 
             {error && (
               <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
