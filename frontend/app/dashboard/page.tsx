@@ -34,6 +34,8 @@ function DashboardContent() {
   const activeSessions = sessions.filter(
     (s) => s.status === 'ACTIVE' && s.expiresAt > now
   );
+  const completedSessions = sessions.filter((s) => s.status === 'COMPLETED');
+  const totalSpentCents = completedSessions.reduce((sum, s) => sum + s.costCents, 0);
 
   // Sparkline SVG Path
   const sparklinePoints = "M 0 40 L 10 35 L 20 38 L 30 20 L 40 25 L 50 10 L 60 15 L 70 5";
@@ -71,11 +73,11 @@ function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="flex items-end justify-between">
-              <div>
+                            <div>
                 <div className="text-3xl font-bold text-slate-900">
-                  ₦{(sessions.length * 1000).toLocaleString('en-NG')}
+                  ₦{(totalSpentCents / 100).toLocaleString('en-NG')}
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Across {sessions.length} rentals</p>
+                <p className="text-xs text-slate-500 mt-1">Across {completedSessions.length} completed rentals</p>
               </div>
               
               <div className="h-12 w-24">
