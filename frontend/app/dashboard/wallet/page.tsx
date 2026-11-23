@@ -209,10 +209,33 @@ function WalletContent() {
             </div>
             <p className="text-xs text-slate-500 pt-2 border-t">You'll be redirected to a secure checkout to complete the payment.</p>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isProcessing}>Cancel</Button>
-            <Button onClick={() => handleTopup('flutterwave')} disabled={isProcessing} className="bg-orange-600 hover:bg-orange-700 text-white">{isProcessing ? 'Redirecting...' : 'Pay with Flutterwave'}</Button>
-            <Button onClick={() => handleTopup('paystack')} disabled={isProcessing} className="bg-blue-600 hover:bg-blue-700 text-white">{isProcessing ? 'Redirecting...' : 'Pay with Paystack'}</Button>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+              disabled={isProcessing}
+            >
+              Cancel
+            </Button>
+            
+            {/* 
+              Flutterwave Button is temporarily disabled 
+              <Button
+                onClick={() => handleTopup('flutterwave')}
+                disabled={isProcessing}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {isProcessing ? 'Redirecting...' : 'Pay with Flutterwave'}
+              </Button>
+            */}
+
+            <Button
+              onClick={() => handleTopup('paystack')}
+              disabled={isProcessing}
+              className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+            >
+              {isProcessing ? 'Redirecting...' : 'Pay with Paystack'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
