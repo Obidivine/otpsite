@@ -2,6 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const userService = require('../services/user.service');
+const db = require('../config/db');
+const bcrypt = require('bcrypt');
 const { authLimiter } = require('../middleware/ratelimit.middleware');
 
 // POST /api/v1/auth/signup
