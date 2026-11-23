@@ -34,10 +34,16 @@ function DashboardContent() {
   const activeSessions = sessions.filter(
     (s) => s.status === 'ACTIVE' && s.expiresAt > now
   );
+
+  // Filter for recent sessions (completed or expired)
+  const recentSessions = sessions
+    .filter((s) => s.status !== 'ACTIVE' || s.expiresAt <= now)
+    .slice(0, 4);
+
+  // Calculate total spent for completed sessions
   const completedSessions = sessions.filter((s) => s.status === 'COMPLETED');
   const totalSpentCents = completedSessions.reduce((sum, s) => sum + s.costCents, 0);
 
-  // Sparkline SVG Path
   const sparklinePoints = "M 0 40 L 10 35 L 20 38 L 30 20 L 40 25 L 50 10 L 60 15 L 70 5";
 
   return ( 
@@ -52,20 +58,10 @@ function DashboardContent() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* TOP GRID: 2 Columns (Wallet + Total Spent) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <BalanceCard />
 
-        <Card className="shadow-sm border-slate-200 bg-white">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Active Sessions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900">{activeSessions.length}</div>
-            <p className="text-xs text-slate-500 mt-1">Numbers currently rented</p>
-          </CardContent>
-        </Card>
-
-        {/* Total Spent Card with Sparkline */}
         <Card className="shadow-sm border-slate-200 bg-white">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-slate-600">Total Spent</CardTitle>
@@ -73,11 +69,11 @@ function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="flex items-end justify-between">
-                            <div>
+              <div>
                 <div className="text-3xl font-bold text-slate-900">
                   ₦{(totalSpentCents / 100).toLocaleString('en-NG')}
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Across {completedSessions.length} completed rentals</p>
+                <p className="text-xs text-slate-500 mt-1">Across {completedSessions.length} rentals</p>
               </div>
               
               <div className="h-12 w-24">
@@ -97,7 +93,7 @@ function DashboardContent() {
         </Card>
       </div>
 
-      {/* Active Sessions Section */}
+      {/* 1. ACTIVE SESSIONS (with Countdown Timer) */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-slate-900">Active Sessions</h2>
@@ -121,7 +117,21 @@ function DashboardContent() {
         )}
       </div>
 
-      {/* Recent Transactions Section */}
+      {/* 2. RECENT SESSIONS (Completed / Expired) */}
+      {recentSessions.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-slate-900">Recent Sessions</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {recentSessions.map((session) => (
+              <SessionCard key={session.id} session={session} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 3. RECENT TRANSACTIONS */}
       <div className="pt-2">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-slate-900">Recent Transactions</h2>
