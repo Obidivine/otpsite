@@ -57,6 +57,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           )}
         </Link>
 		
+		{/* install button*/}
 		<div className="px-3 py-2">
   <InstallButton />
 </div>
