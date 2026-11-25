@@ -7,6 +7,7 @@ import { useBalance } from '@/lib/queries';
 import { Menu } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SupportLinks } from '@/components/SupportLinks';
+import { InstallButton } from '@/components/InstallButton';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const user = useAuthStore((s) => s.user);
@@ -55,6 +56,10 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             <Skeleton className="h-4 w-12 inline-block" />
           )}
         </Link>
+		
+		<div className="px-3 py-2">
+  <InstallButton />
+</div>
 
         {/* Desktop Avatar */}
         <div className="hidden md:flex items-center gap-3 pl-4 border-l border-slate-200">
