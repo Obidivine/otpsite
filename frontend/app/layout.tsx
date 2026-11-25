@@ -1,11 +1,9 @@
-import type { Metadata } from "next";
+// frontend/app/layout.tsx
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers"; 
 import { Toaster } from "@/components/ui/sonner"; 
-import type { Metadata, Viewport } from "next";
-
-
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -13,7 +11,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: 'OTP Reseller — Foreign phone numbers for OTP verification',
   description: 'Get instant access to US, UK, and European phone numbers for verifying accounts.',
-    manifest: "/manifest.ts", // or "/manifest.json" if you used the public folder
+  manifest: "/manifest.ts", // <--- ADDED THIS
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -22,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2563eb",
+  themeColor: "#2563eb", // <--- ADDED THIS
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
