@@ -29,7 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen bg-slate-950 flex text-slate-50">
         <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col">
   <div className="flex-1">
