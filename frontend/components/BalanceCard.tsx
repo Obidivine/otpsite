@@ -26,7 +26,7 @@ export function BalanceCard() {
         {isLoading ? (
           <Skeleton className="h-9 w-24 mb-2" />
         ) : (
-          <div className="text-3xl font-bold">{balanceNaira}</div>
+         <div className="text-3xl font-bold text-white">{balanceNaira}</div>
         )}
         <p className="text-xs text-slate-500 mt-1">
           Available for new rentals
