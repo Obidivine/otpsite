@@ -49,7 +49,7 @@ function DashboardContent() {
   return ( 
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-black tracking-tight text-white">Dashboard</h1>
         <Link href="/dashboard/rent">
           <Button className="shadow-sm">
             <Phone className="h-4 w-4 mr-2" />
@@ -96,7 +96,7 @@ function DashboardContent() {
       {/* 1. ACTIVE SESSIONS (with Countdown Timer) */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-slate-900">Active Sessions</h2>
+          <h2 className="text-xl font-semibold text-slate-900 text-white">Active Sessions</h2>
           <Link href="/dashboard/history" className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 transition-colors">
             <History className="h-4 w-4" /> View all
           </Link>
@@ -121,7 +121,7 @@ function DashboardContent() {
       {recentSessions.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-slate-900">Recent Sessions</h2>
+            <h2 className="text-xl font-semibold text-slate-900 text-white">Recent Sessions</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {recentSessions.map((session) => (
@@ -134,7 +134,7 @@ function DashboardContent() {
       {/* 3. RECENT TRANSACTIONS */}
       <div className="pt-2">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-slate-900">Recent Transactions</h2>
+          <h2 className="text-xl font-semibold text-slate-900 text-white">Recent Transactions</h2>
           <Link href="/dashboard/wallet" className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 transition-colors">
             View Wallet
           </Link>
