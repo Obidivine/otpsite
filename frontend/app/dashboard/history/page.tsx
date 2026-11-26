@@ -68,7 +68,9 @@ function HistoryContent() {
       {sessions.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
-            <Button key={f.id} variant={filter === f.id ? 'default' : 'outline'} size="sm" onClick={() => setFilter(f.id)}>
+            <Button key={f.id} variant={filter === f.id ? 'default' : 'outline'} size="sm" onClick={() => setFilter(f.id)} 
+              className={filter === f.id ? '' : 'bg-transparent text-slate-300 border-slate-700 hover:bg-slate-800 hover:text-white'}
+            >
               {f.label}
             </Button>
           ))}
