@@ -10,9 +10,25 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'OTP Reseller — Foreign phone numbers for OTP verification',
-  description: 'Get instant access to US, UK, and European phone numbers for verifying accounts.',
-  manifest: "/manifest.ts", // <--- ADDED THIS
+  title: 'OTP360 | Buy Foreign Numbers for OTP Verification',
+  description: 'Get verification numbers at cheap rates. US/UK WhatsApp from ₦2,200, Signal from ₦1,850, Telegram from ₦1,950. Pay in Naira, receive codes instantly.',
+  
+  openGraph: {
+    title: 'OTP360 | Cheap Foreign Numbers for OTP',
+    description: 'Foreign WhatsApp from ₦2,200, Signal from ₦1,850, Telegram from ₦1,950. Pay in Naira and get your code instantly.',
+    url: 'https://otp360.store',
+    siteName: 'OTP360.store',
+    locale: 'en_NG',
+    type: 'website',
+  },
+  
+  twitter: {
+    card: 'summary_large_image',
+    title: 'OTP360 | Cheap Foreign Numbers for OTP',
+    description: 'Foreign WhatsApp from ₦2,200, Signal from ₦1,850, Telegram from ₦1,950. Pay in Naira and get your code instantly.',
+  },
+  
+  manifest: "/manifest.ts",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
