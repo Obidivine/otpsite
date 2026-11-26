@@ -15,9 +15,9 @@ export function BalanceCard() {
   const balanceNaira = `₦${(balanceCents / 100).toLocaleString('en-NG')}`;
 
   return (
-    <Card className="shadow-sm border-slate-200 bg-white rounded-xl">
+    <Card className="shadow-none border-slate-800 bg-slate-900 rounded-xl">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-slate-600">
+        <CardTitle className="text-sm font-medium text-slate-400">
           Wallet Balance
         </CardTitle>
         <Wallet className="h-4 w-4 text-slate-500" />
@@ -32,7 +32,7 @@ export function BalanceCard() {
           Available for new rentals
         </p>
         <Link href="/dashboard/wallet" className="block mt-4">
-          <Button className="w-full" variant="default">
+          <Button className="w-full bg-white text-black hover:bg-slate-200 font-semibold">
             Top Up
           </Button>
         </Link>
