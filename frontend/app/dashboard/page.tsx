@@ -62,15 +62,15 @@ function DashboardContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <BalanceCard />
 
-        <Card className="shadow-sm border-slate-200 bg-white">
+        <Card className="shadow-none border-slate-800 bg-slate-900 rounded-xl">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Spent</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Total Spent</CardTitle>
             <span className="text-xs font-semibold text-slate-400">All time</span>
           </CardHeader>
           <CardContent>
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-3xl font-bold text-slate-900">
+                <div className="text-3xl font-bold text-white">
                   ₦{(totalSpentCents / 100).toLocaleString('en-NG')}
                 </div>
                 <p className="text-xs text-slate-500 mt-1">Across {completedSessions.length} rentals</p>
@@ -154,7 +154,7 @@ function DashboardContent() {
               {recentTransactions.map((tx, index) => {
                 const isCredit = tx.amount_cents > 0;
                 const Icon = isCredit ? ArrowDownCircle : ArrowUpCircle;
-                const color = isCredit ? 'text-green-600' : 'text-slate-600';
+                const color = isCredit ? 'text-green-600' : 'text-slate-400';
                 const sign = isCredit ? '+' : '-';
                 
                 return (
