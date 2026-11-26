@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 
 export function EmptySessionState() {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-white border border-slate-200 rounded-xl border-dashed">
+   <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-slate-900 border border-slate-800 rounded-xl">
       {/* SVG Illustration */}
       <div className="w-32 h-32 mb-6 relative">
         <div className="absolute inset-0 bg-blue-50 rounded-full scale-110"></div>
@@ -13,8 +13,8 @@ export function EmptySessionState() {
         </svg>
       </div>
       
-      <h3 className="text-xl font-bold text-slate-900 mb-2">No active sessions</h3>
-      <p className="text-slate-500 max-w-sm mb-6">
+      <h3 className="text-xl font-bold text-white mb-2">No active sessions</h3>
+      <p className="text-slate-400 max-w-sm mb-6">
         You don't have any active phone numbers right now. Rent a number to start receiving verification codes instantly.
       </p>
       <Link href="/dashboard/rent">
