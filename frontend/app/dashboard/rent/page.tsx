@@ -70,6 +70,19 @@ function RentContent() {
         </CardContent>
       </Card>
 
+        {/* ADD THIS WARNING BOX HERE */}
+      <div className="bg-blue-950/50 border border-blue-900 rounded-lg p-4 flex gap-3 text-sm">
+        <span className="text-xl">💡</span>
+        <div>
+          <p className="font-semibold text-blue-200 mb-1">OTP Not Arriving?</p>
+          <p className="text-blue-300/80">
+            Please ensure your app (WhatsApp, Telegram, etc.) is updated to the latest version. If you are using a VPN, try turning it off/on or switching to a different country location that matches the number you are renting.
+          </p>
+        </div>
+      </div>
+      {/* END OF WARNING BOX */}
+
+
       {error && (
         <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-4 flex justify-between">
           <span>{error}</span>
