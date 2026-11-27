@@ -76,7 +76,7 @@ function RentContent() {
         <div>
           <p className="font-semibold text-blue-200 mb-1">OTP Not Arriving?</p>
           <p className="text-blue-300/80">
-            Please ensure your app (WhatsApp, Telegram, etc.) is updated to the latest version. If you are using a VPN, try turning it off/on or switching to a different country location that matches the number you are renting.
+            Please ensure your app is updated to the latest version. If you are using a VPN, try turning it off/on or switching to a different country location that matches the number you are renting.
           </p>
         </div>
       </div>
