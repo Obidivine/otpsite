@@ -34,14 +34,23 @@ interface ServiceSelectorProps {
 export function ServiceSelector({ value, onChange }: ServiceSelectorProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor="service">Service</Label>
+      {/* Changed label color to white */}
+      <Label htmlFor="service" className="text-slate-200">Service</Label>
+      
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger id="service" className="w-full md:w-64">
+        {/* Changed trigger background to dark slate and text to white */}
+        <SelectTrigger id="service" className="w-full md:w-64 bg-slate-950 border-slate-700 text-white">
           <SelectValue placeholder="Select a service" />
         </SelectTrigger>
-        <SelectContent>
+        
+        {/* Changed dropdown background to dark and text to white */}
+        <SelectContent className="bg-slate-900 border-slate-700 text-white">
           {SERVICES.map((s) => (
-            <SelectItem key={s.id} value={s.id}>
+            <SelectItem 
+              key={s.id} 
+              value={s.id}
+              className="focus:bg-slate-800 focus:text-white"
+            >
               {s.name}
             </SelectItem>
           ))}
