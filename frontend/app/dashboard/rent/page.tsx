@@ -103,6 +103,7 @@ function RentContent() {
             Available Countries — {service.charAt(0).toUpperCase() + service.slice(1)}
           </h2>
 
+          {/* ADD THIS LINK */}
           <Link href="/dashboard/help" className="text-sm font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
     <HelpCircle className="h-4 w-4" />
     Need Help?
