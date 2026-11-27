@@ -190,6 +190,8 @@ router.post('/payments/flutterwave/webhook', async (req, res) => {
 
     await client.query('COMMIT');
     console.log(`[DEPOSIT SUCCESS] Credited user ${userId} with ${amountKobo} Kobo.`);
+    
+    sendAdminAlert(`🚨 <b>NEW DEPOSIT!</b>\n\nUser: ${userId}\nAmount: ₦${(intent.amount_cents / 100).toLocaleString()}\nProvider: Paystack`);
 
     return res.status(200).json({ status: 'success' });
 
