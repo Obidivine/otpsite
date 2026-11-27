@@ -22,6 +22,44 @@ router.post('/signup', authLimiter, async (req, res) => {
     const user = await userService.createUser(email, password);
     const token = userService.generateJwt(user.id, user.email);
 
+    // Send Welcome Email
+    try {
+      await transporter.sendMail({
+        from: '"OTP360 Support" <otpreseller360@gmail.com>',
+        to: email,
+        subject: 'Welcome to OTP360! 🚀',
+        html: `
+          <div style="font-family: Arial, sans-serif; background-color: #0f172a; color: #ffffff; padding: 40px 20px; text-align: center;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #1e293b; padding: 30px; border-radius: 12px; border: 1px solid #334155;">
+              <h2 style="color: #ffffff; margin-bottom: 20px;">Welcome to OTP360! 🎉</h2>
+              <p style="color: #94a3b8; font-size: 16px; line-height: 1.5;">
+                Hi there,
+              </p>
+              <p style="color: #94a3b8; font-size: 16px; line-height: 1.5;">
+                Your account has been successfully created. You are now ready to verify any account with our foreign virtual numbers.
+              </p>
+              <p style="color: #94a3b8; font-size: 16px; line-height: 1.5;">
+                To get started, simply log in and top up your wallet. We accept payments via Paystack.
+              </p>
+              <a href="https://otp360.store/dashboard/wallet" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; margin-top: 20px;">
+                Top Up Wallet
+              </a>
+              <p style="color: #64748b; font-size: 12px; margin-top: 30px;">
+                If you have any questions, just reply to this email or reach out to us on WhatsApp. 
+                <br><br>
+                Cheers,<br>
+                The OTP360 Team
+              </p>
+            </div>
+          </div>
+        `,
+      });
+      console.log(`[WELCOME EMAIL SENT] to ${email}`);
+    } catch (emailErr) {
+      console.error('[WELCOME EMAIL ERROR]:', emailErr.message);
+      // We don't fail the signup if the email fails
+    }
+
     return res.status(201).json({
       success: true,
       token,
