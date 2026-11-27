@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/EmptyState';
-import { Package, Search } from 'lucide-react'; // Added Search icon
+import { Package, Search, HelpCircle } from 'lucide-react'; // Added Search icon
 
 export default function RentPage() {
   return (
@@ -102,6 +102,11 @@ function RentContent() {
           <h2 className="text-xl font-semibold text-white">
             Available Countries — {service.charAt(0).toUpperCase() + service.slice(1)}
           </h2>
+
+          <Link href="/dashboard/help" className="text-sm font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+    <HelpCircle className="h-4 w-4" />
+    Need Help?
+  </Link>
           
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
