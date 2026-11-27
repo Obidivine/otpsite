@@ -4,6 +4,7 @@ const router = express.Router();
 const db = require('../config/db');
 const authenticateToken = require('../middleware/auth.middleware');
 const crypto = require('crypto');
+const { sendAdminAlert } = require('../services/telegram.service');
 
 // ==========================================
 // FLUTTERWAVE ROUTES (NAIRA/KOBO ONLY)
