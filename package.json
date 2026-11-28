@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
+    "broadcast": "node broadcast.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -23,7 +24,6 @@
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^10.6.1",
     "pg": "^8.23.0",
-    "broadcast": "node broadcast.js",
     "twilio": "^6.1.1"
   }
 }
