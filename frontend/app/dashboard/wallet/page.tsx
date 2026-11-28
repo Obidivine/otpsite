@@ -125,6 +125,11 @@ function WalletContent() {
         <CardHeader>
           <CardTitle>Top Up</CardTitle>
           <CardDescription>Choose an amount in Naira. You will be redirected to a secure checkout.</CardDescription>
+          {/* ADD THE HELP LINK HERE */}
+    <Link href="/dashboard/help" className="text-sm font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+      <HelpCircle className="h-4 w-4" />
+      Need Help?
+    </Link>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
