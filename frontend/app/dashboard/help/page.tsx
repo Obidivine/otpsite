@@ -10,7 +10,9 @@ import {
   RefreshCcw, 
   ShieldCheck, 
   Smartphone,
-  ChevronDown
+  ChevronDown,
+  CreditCard,
+  Clock
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -20,24 +22,29 @@ export default function HelpPage() {
 
   const faqs = [
     {
+      icon: CreditCard,
+      question: "I paid, but my wallet balance didn't update.",
+      answer: "Payments are processed instantly, but sometimes network delays can cause a 1-2 minute delay. Please refresh your dashboard or go to the Wallet page to check the Transaction History. If it has been more than 5 minutes and you were debited without a balance update, please click 'Chat with a Live Agent' below and send us your payment receipt."
+    },
+    {
+      icon: Clock,
+      question: "What happens if my session expires without receiving a code?",
+      answer: "All sessions have a 15-minute timer. If the code does not arrive within 15 minutes, the session will automatically expire, and your funds will be instantly refunded to your OTP360 wallet. You do not need to contact support for this."
+    },
+    {
       icon: Smartphone,
       question: "Why am I not receiving the OTP?",
       answer: "Make sure the app you are trying to verify (WhatsApp, Telegram, etc.) is fully updated to the latest version. If you are using a VPN, ensure your VPN location matches the country of the number you rented. Try turning your VPN off and on again, or switching to a different server location."
     },
     {
       icon: RefreshCcw,
-      question: "What happens if the code never arrives?",
-      answer: "All sessions have a 15-minute timer. If the code does not arrive within 15 minutes, the session will automatically expire, and your funds will be instantly refunded to your OTP360 wallet. You can check your wallet balance or transaction history to confirm."
+      question: "How do I cancel a session?",
+      answer: "If you want to cancel a session before the 15 minutes are up, go to your Active Sessions, click 'View' on the number, and wait for the 3-minute timer to finish. Once the 3 minutes pass, a 'Cancel Session & Refund' button will appear."
     },
     {
       icon: ShieldCheck,
       question: "Can I use this number for my main account?",
       answer: "We highly recommend using these numbers for secondary accounts or verifications where privacy is needed. Some platforms (like WhatsApp) have strict anti-spam systems and may block virtual numbers. If a number fails, you are always refunded automatically."
-    },
-    {
-      icon: HelpCircle,
-      question: "How do I cancel a session?",
-      answer: "If you want to cancel a session before the 15 minutes are up, go to your Active Sessions, click 'View' on the number, and wait for the 3-minute timer to finish. Once the 3 minutes pass, a 'Cancel Session & Refund' button will appear."
     }
   ];
 
