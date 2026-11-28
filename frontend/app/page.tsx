@@ -72,8 +72,10 @@ function Hero() {
                 </Button>
               </Link>
               <Link href="/login">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-base">
+               <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-base">
+<p style="color: blue;">
                   Sign In
+</p>
                 </Button>
               </Link>
             </div>
