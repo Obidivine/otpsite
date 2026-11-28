@@ -25,6 +25,56 @@ router.post('/wallet/topup/init', authenticateToken, async (req, res) => {
        VALUES ($1, $2, $3, 'PENDING');`,
       [userId, txRef, amountCents]
     );
+    
+    // ---> ADD THIS DELAYED EMAIL CHECK <---
+      // Wait 15 minutes, then check if the payment intent is still PENDING. 
+      // If it is, send them a reminder email.
+      setTimeout(async () => {
+        try {
+          const checkRes = await db.query(
+            'SELECT status FROM public.payment_intents WHERE tx_ref = $1',
+            [txRef]
+          );
+          
+          // If still pending, they abandoned the checkout
+          if (checkRes.rows[0]?.status === 'PENDING') {
+            const userRes = await db.query('SELECT email FROM public.users WHERE id = $1', [userId]);
+            const email = userRes.rows[0]?.email;
+            
+            if (email) {
+              await transporter.sendMail({
+                from: '"OTP360 Support" <otpreseller360@gmail.com>',
+                to: email,
+                subject: 'Did you have trouble topping up? 🤔',
+                html: `
+                  <div style="font-family: Arial, sans-serif; background-color: #0f172a; color: #ffffff; padding: 40px 20px; text-align: center;">
+                    <div style="max-width: 500px; margin: 0 auto; background-color: #1e293b; padding: 30px; border-radius: 12px; border: 1px solid #334155;">
+                      <h2 style="color: #ffffff; margin-bottom: 20px;">Payment Incomplete</h2>
+                      <p style="color: #94a3b8; font-size: 16px; line-height: 1.5;">
+                        Hi there,
+                      </p>
+                      <p style="color: #94a3b8; font-size: 16px; line-height: 1.5;">
+                        We noticed you tried to top up your OTP360 wallet recently, but the payment didn't go through.
+                      </p>
+                      <p style="color: #94a3b8; font-size: 16px; line-height: 1.5;">
+                        If you had any issues with the checkout page, please try again. If the problem persists, our support team is here to help.
+                      </p>
+                      <a href="https://otp360.store/dashboard/wallet" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; margin-top: 20px;">
+                        Try Again
+                      </a>
+                      <p style="color: #64748b; font-size: 12px; margin-top: 30px;">
+                        Need help? <a href="https://wa.me/2347040763069" style="color: #3b82f6;">Chat with us on WhatsApp</a>.
+                      </p>
+                    </div>
+                  </div>
+                `,
+              });
+            }
+          }
+        } catch (err) {
+          console.error('[ABANDONED CART EMAIL ERROR]:', err.message);
+        }
+      }, 15 * 60 * 1000); // 15 minutes
 
     return res.status(200).json({
       success: true,
