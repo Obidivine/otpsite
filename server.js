@@ -56,3 +56,15 @@ app.listen(PORT, () => {
   console.log(`[Phase 2 - Chunk 5B Active] Server on port ${PORT}`);
   console.log(`==============================================\n`);
 });
+
+// TEMPORARY BROADCAST ROUTE
+app.get('/api/admin/run-broadcast', async (req, res) => {
+  try {
+    require('./broadcast.js'); // This runs your existing script
+    res.status(200).send('Broadcast started! Check Railway logs.');
+  } catch (err) {
+    res.status(500).send('Error: ' + err.message);
+  }
+});
+
+// ... your existing app.listen code stays below this
