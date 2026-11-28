@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowDownCircle, ArrowUpCircle, Wallet, Banknote, Receipt } from 'lucide-react';
+import { ArrowDownCircle, HelpCircle, ArrowUpCircle, Wallet, Banknote, Receipt } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
+import Link from 'next/link';
 
 const PRESET_AMOUNTS = [100000, 300000, 500000, 1000000]; 
 
